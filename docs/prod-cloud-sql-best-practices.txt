@@ -1,0 +1,272 @@
+General best practices  |  Cloud SQL for MySQL  |  Google Cloud Documentation
+Skip to main content
+Send feedback
+General best practices
+Stay organized with collections
+Save and categorize content based on your preferences.
+MySQL
+|
+PostgreSQL
+|
+SQL Server
+This page provides best practices for getting the best performance,
+durability, and availability from Cloud SQL.
+If issues occur with your Cloud SQL instance, review
+the following during troubleshooting:
+Debugging connection issues
+Diagnosing issues
+Known issues
+Troubleshooting
+Instance configuration and administration
+Best practice
+More information
+Read and follow the
+operational guidelines
+to ensure that your instances are covered by the
+Cloud SQL SLA
+.
+Configure a maintenance window for your primary instance to control
+      when disruptive updates can occur.
+See
+Maintenance window
+.
+For read-heavy workloads, add
+read replicas
+to offload traffic from the primary instance.
+Optionally, you can use a load balancer such as
+HAProxy
+to manage traffic to the
+      replicas.
+If you delete and recreate instances regularly, use a timestamp in
+      the instance ID to increase the likelihood that new instance IDs are
+      usable.
+Don't start an administrative operation before the previous operation
+      has completed.
+Cloud SQL instances won't accept new operation requests until
+      they have completed the previous operation. If you attempt to start
+      a new operation prematurely, the operation request fails. This includes
+      instance restarts.
+The instance status in the Google Cloud console does not
+        reflect whether an operation is running. The green check mark denotes
+        only that the instance is in the
+RUNNABLE
+state. To see
+        whether an operation is running, go to the
+Operations
+tab and
+        check the status of the most recent operation.
+Configure storage to accommodate critical database maintenance.
+If the
+enable automatic storage increases
+instance setting is disabled or the
+automatic storage increase limit
+is enabled, ensure you have at least 20% available
+      space to accommodate any critical database maintenance operations
+      that Cloud SQL may perform.
+To get alerted on available disk space falling below 20%, create a metrics-based alerting policy for the
+disk utilization
+metric with an
+above threshold
+position and a value of
+.8
+. For more information,
+      see
+Create metrics-based alert policies
+.
+Prevent over-utilization of your CPU.
+You can view the percentage of available CPU that your instance is using
+      on the instance details page in the Google Cloud console. For more information,
+      see
+Metrics
+. You can also
+      monitor your CPU usage and receive alerts at a specified threshold using
+Create metric-threshold alerting policies
+.
+To avoid over-utilization, you can increase the number of CPUs for
+      your instance. Changing CPUs requires an instance restart. If your instance
+      is already at the maximum number of CPUs, you must shard your database to multiple
+      instances.
+Avoid memory exhaustion.
+When looking for signs of memory exhaustion, you should primarily
+      use the
+usage
+metric.
+      
+      To avoid out-of-memory errors, we recommend that this metric remains under
+      90% for instances less than or equal to 16 GB and 95% for instances
+      greater than 16 GB.
+You can also use the
+total_usage
+metric to observe the percentage of available memory that your Cloud SQL
+      instance is using, including memory used by the database container and
+      memory allocated by the operating system cache.
+By observing the difference between the two metrics, you can
+      identify how much memory is used by processes versus how much
+      is used by the operating system cache. You can repurpose the memory in
+      this cache.
+To predict out-of-memory issues, check both metrics and
+      interpret them together. If the metrics appear high, the instance
+       might be low in memory. This can be because of a custom configuration,
+       the instance being undersized for the workload, or a combination of
+       these factors.
+Scale your Cloud SQL instance to increase the size of its memory.
+      Changing the instance's memory size requires an instance restart.
+      If your instance is already at the maximum memory size,
+      you must shard your database across multiple instances. To learn more about
+      monitoring both metrics in the Google Cloud console,
+      see
+Metrics
+.
+Security
+Best practice
+More information
+Prefer Private IP
+Unless
+Public IP
+access is required, prefer using
+Private IP
+. This will
+        help minimize unauthorized network connections to your database.
+Avoid 0.0.0.0/0 in Authorized Networks
+Avoid including 0.0.0.0/0 in
+Authorized Networks
+as this permits access from the global internet without restriction.
+Avoid excessively large Authorized Networks
+Avoid using small CIDR prefixes in
+Authorized Networks
+as this permits access from a potentially excessive number of hosts.
+        We recommend a CIDR prefix no smaller than /16, and preferably greater
+        than /19.
+Enable password policies
+Using
+Instance password policies
+,
+   
+        specify appropriate password policies for your database instance to avoid
+        weak passwords being configured, set expiry time, and configure account
+        locking on failed login attempts.
+        This is especially important if you are configuring your instance for
+        Public IP.
+Data architecture
+Best practice
+More information
+Split your large instances into smaller instances, where possible.
+When possible, using many smaller Cloud SQL instances is
+        better than one large instance. Managing a large, monolithic instance
+        presents challenges not posed by a group of smaller instances.
+Don't use too many databases or database tables.
+Keep your database count to less than 500 databases. Keep your
+       instance's table count to fewer than 50,000, or 500,000 if you
+       meet the minimum hardware requirement of 32+ cores and 200G+ memory. Keep
+       your table count for each database fewer than 50,000 tables.
+       Too many databases or database tables can impact database upgrade time.
+Make sure your tables have a primary or unique key.
+Cloud SQL uses row-based replication, which works best on tables
+      with primary or unique keys.
+Application implementation
+Best practice
+More information
+Use good connection management practices, such as connection pooling and
+      exponential backoff.
+Using these techniques improves your application's use of resources
+      and helps you stay within Cloud SQL
+connection limits
+.
+      For more information and code samples, see
+Managing database connections
+.
+Test your application's response to maintenance updates, which can
+      happen at any time during the maintenance window.
+Try
+self-service maintenance
+to simulate a maintenance update. During maintenance, your instance
+      becomes unavailable for a brief period, and existing connections
+      are dropped. Testing maintenance rollouts gives you a better
+      understanding of how your application handles scheduled maintenance and
+      how quickly the system can recover.
+Test your application's response to failovers, which can
+      happen at any time.
+You can manually initiate a failover using the Google Cloud console,
+      the
+gcloud CLI
+, or the API. See
+Initiating failover
+.
+Avoid large transactions.
+Keep transactions small and short. If a large database update is needed,
+      do it in several smaller transactions rather than one large transaction.
+If you are using the Cloud SQL Auth Proxy, make sure you are using the most
+      up-to-date version.
+See
+Keeping the
+        Cloud SQL Auth Proxy up-to-date
+.
+Data import and export
+Best practice
+More information
+Use serverless exports.
+Serverless exports
+offload the export operation to a temporary instance, allowing the primary
+      instance to continue to serve queries and perform operations at its usual
+      performance. When the data export is complete, the temporary instance is
+      automatically deleted.
+Speed up imports for small instance sizes.
+For small instances, you can temporarily
+increase the CPU and RAM
+of an instance to improve performance when importing large datasets.
+If you are exporting data for import into Cloud SQL, be sure to
+      use the proper procedure.
+See
+Exporting data from an externally managed database server
+.
+When migrating data with an export and import, use the exact same SQL
+      mode for the import as the export.
+See
+Use the same SQL Mode for import and export
+.
+Backup and recovery
+Best practice
+More information
+Protect your data with the appropriate Cloud SQL functionality.
+Backups, point-in-time recovery, and exports are ways to provide data redundancy and
+      protection. They each protect against different scenarios and complement
+      each other in a robust data protection strategy.
+Backups are lightweight; they provide a way to
+        restore the data on your instance to its state at the time you took
+        the backup. However, backups have some limitations. If you delete the
+        instance, the backups are also deleted. You can't back up a single
+        database or table. And if the region where the instance is located
+        is unavailable, you cannot restore the instance from that backup, even
+        in an available region.
+Point-in-time recovery helps you recover an instance to a specific point
+       in time. For example, if an error causes a loss of data, you can recover
+       a database to its state before the error occurred. A point-in-time
+       recovery always creates a new instance; you cannot perform a
+       point-in-time recovery to an existing instance.
+Exports take longer to create, because an external file is created
+        in Cloud Storage that can be used to recreate your data. Exports
+        are unaffected if you delete the instance. In addition, you can export
+        only a single database or even table, depending on the export format
+        you choose.
+Size instances to account for transaction (binary) log retention.
+High write activity to the database can generate a large volume of
+      transaction (binary) logs, which can consume significant disk space, and
+      lead to disk growth for instances enabled to increase storage
+      automatically. We recommend sizing instance storage to account for
+      transaction log retention.
+Protect your instance and backups from accidental deletion.
+A Cloud SQL instance that you create in the Google Cloud console
+    or via Terraform enables accidental deletion prevention by default.
+Use the export feature in Cloud SQL to export your data for additional
+    protection. Use Cloud Scheduler with the REST API to automate export
+    management. For more advanced scenarios, Cloud Scheduler with
+    Cloud Run functions for automation.
+Send feedback
+Except as otherwise noted, the content of this page is licensed under the
+Creative Commons Attribution 4.0 License
+, and code samples are licensed under the
+Apache 2.0 License
+. For details, see the
+Google Developers Site Policies
+. Java is a registered trademark of Oracle and/or its affiliates.
+Last updated 2026-04-02 UTC.

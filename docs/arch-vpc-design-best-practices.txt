@@ -1,0 +1,1106 @@
+Best practices and reference architectures for VPC design  |  Cloud Architecture Center  |  Google Cloud Documentation
+Skip to main content
+Send feedback
+Best practices and reference architectures for VPC design
+Stay organized with collections
+Save and categorize content based on your preferences.
+Last reviewed 2025-01-30 UTC
+This guide introduces best practices and typical enterprise architectures for
+the design of
+Virtual Private Cloud (VPC)
+with Google Cloud. This guide is for cloud network architects and
+system architects who are already familiar with Google Cloud networking
+concepts.
+General principles and first steps
+Best practices
+:
+Identify decision makers, timelines, and pre-work
+.
+Consider VPC network design early
+.
+Keep it simple
+.
+Use clear naming conventions
+.
+Identify decision makers, timelines, and pre-work
+As a first step in your VPC network design, identify the decision makers, timelines,
+and pre-work necessary to ensure that you can address stakeholder
+requirements.
+Stakeholders might include application owners, security architects, solution
+architects, and operations managers. The stakeholders themselves might change
+depending on whether you are planning your VPC network for a
+project, a line of business, or the entire organization.
+Part of the pre-work is to get the team acquainted with concepts and
+terminology around VPC network design. Useful documents include the
+following:
+Resource Manager documentation
+Identity and Access Management (IAM) documentation
+Virtual Private Cloud documentation
+Consider VPC network design early
+Make VPC network design an early part of designing your
+organizational setup in Google Cloud. It can be disruptive to your
+organization if you later need to change fundamental things such as how your
+network is segmented or where your workloads are located.
+Different VPC network configurations can have significant
+implications for routing, scale, and security. Careful planning and deep
+understanding of your specific considerations helps you to create a solid
+architectural foundation for incremental workloads.
+Keep it simple
+Keeping the design of your VPC network topology simple is the best way to ensure a
+manageable, reliable, and well-understood architecture.
+Use clear naming conventions
+Make your naming conventions simple, intuitive, and consistent. This ensures
+that administrators and end users understand the purpose of each resource, where
+it is located, and how it is differentiated from other resources.
+Commonly accepted abbreviations of long words help with brevity. Using familiar
+terminology where possible helps with readability.
+Consider the components illustrated in the following example when establishing
+your naming conventions:
+Company name
+: Acme Company:
+acmeco
+Business unit
+: Human Resources:
+hr
+Application code
+: Compensation system:
+comp
+Region code
+: northamerica-northeast1:
+na-ne1
+, europe-west1:
+eu-we1
+Environment codes
+:
+dev
+,
+test
+,
+uat
+,
+stage
+,
+prod
+In this example, the development environment for the human resources
+department's compensation system is named
+acmeco-hr-comp-eu-we1-dev
+.
+For other common networking resources, consider patterns like these:
+VPC network
+syntax:
+{company name}-{description(App or BU)-label}-{environment-label}-{seq#}
+example:
+acmeco-hr-dev-vpc-1
+Subnet
+syntax:
+{company-name}-{description(App or BU)-label}-{region-label}-{environment-label}-{subnet-label}
+example:
+acmeco-hr-na-ne1-dev-vpc-1-subnet-1
+note: If a subnet contains resources in one zone only, you can use "zone-label" instead of "region-label."
+Firewall rule
+syntax:
+{company-name}-{description(App or BU)-label}{source-label}-{dest-label}-{protocol}-{port}-{action}
+example:
+acmeco-hr-internet-internal-tcp-80-allow-rule
+IP route
+syntax:
+{priority}-{VPC-label}-{tag}-{next hop}
+example:
+1000-acmeco-hr-dev-vpc-1-int-gw
+Addresses and subnets
+Best practices
+:
+Use custom mode subnets in your enterprise VPC networks
+.
+Group applications into fewer subnets with larger address ranges
+.
+Use custom mode VPC networks
+Though auto mode networks can be useful for early exploration, custom mode
+VPC networks are better suited for most production environments.
+We recommend that enterprises use VPC networks in custom mode
+from the beginning for the following reasons:
+Custom mode VPC networks better integrate into existing IP
+address management schemes. Because all auto mode networks use the same
+set of internal IP ranges, auto mode IP ranges might overlap when connected
+with your on-premises corporate networks.
+You can't connect two auto mode VPC networks together using
+VPC Network Peering because their subnets use identical primary IP ranges.
+Auto mode subnets all have the same name as the network. You can choose
+unique, descriptive names for custom mode subnets, making
+your VPC networks more understandable and maintainable.
+When a new Google Cloud region is introduced, auto mode
+VPC networks automatically get a new subnet in that region.
+Custom mode VPC networks only get new subnets if you specify
+them. This can be important for both sovereignty and IP address management
+reasons.
+If it has no resources, you can
+delete
+the
+default
+network. You cannot delete a VPC network until you have
+removed all resources, including Virtual Machine (VM) instances, that depend on
+it.
+For more details of the differences between auto mode and custom mode
+VPC networks, see the
+VPC network overview
+.
+Group applications into fewer subnets with larger address ranges
+Conventionally, some enterprise networks are separated into many small address
+ranges for a variety of reasons. For example, this might have been done to
+identify or isolate an application or keep a small broadcast domain.
+However, we recommend that you group applications of the same type into fewer,
+more manageable subnets with larger address ranges in the regions you want to
+operate.
+Unlike other networking environments in which a subnet mask is used,
+Google Cloud uses a software-defined networking (SDN) approach to provide
+a full mesh of reachability between all VMs in the global VPC network.
+The number of subnets does not affect routing behaviour.
+You can use service accounts or network tags to apply specific routing policies
+or firewall rules. Identity in Google Cloud is not based solely on the
+subnet IP address.
+Some VPC features—including
+Cloud NAT
+,
+Private Google Access
+,
+VPC Flow Logs
+,
+and
+alias IP ranges
+—are
+configured per subnet. If you need more fine-grained control of these features,
+use additional subnets.
+Single VPC network and Shared VPC
+Best practices
+:
+Start with a single VPC network for resources that have common requirements
+.
+Use Shared VPC for administration of multiple working groups
+.
+Grant the network user role at the subnet level
+.
+Use a single host project if resources require multiple network interfaces
+.
+Use multiple host projects if resource requirements exceed the quota of a single project
+.
+Use multiple host projects if you need separate administration policies for each VPC
+.
+Start with a single VPC network for resources that have common requirements
+For many simple use cases, a single VPC network provides the features that you need,
+while being easier to create, maintain, and understand than the more complex
+alternatives. By grouping resources with common requirements and characteristics
+into a single VPC network, you begin to establish the
+VPC network border as the perimeter for potential issues.
+For an example of this configuration, see the
+single project, single VPC network
+reference architecture.
+Factors that might lead you to create additional VPC networks
+include scale, network security, financial considerations, operational
+requirements, and identity and access management (IAM).
+Use Shared VPC for administration of multiple working groups
+For organizations with multiple teams,
+Shared VPC
+provides an effective tool to extend the architectural simplicity of a single
+VPC network across multiple working groups.
+The simplest approach is to deploy a single Shared VPC host project with a
+single Shared VPC network and then attach team service projects to the host project network.
+In this configuration, network policy and control for all networking resources
+are centralized and easier to manage. Service project departments can configure
+and manage non-network resources, enabling a clear separation of
+responsibilities for different teams in the organization.
+Resources in those projects can communicate with each other more securely and
+efficiently across project boundaries using internal IP addresses. You can
+manage shared network resources—such as subnets, routes, and firewalls—from a
+central host project, so you can enforce consistent network policies across the
+projects.
+For an example of this configuration, see the
+Single host project, multiple service projects, single Shared VPC
+reference architecture.
+Grant the network user role at the subnet level
+The centralized Shared VPC administrator can grant members the network user
+(
+networkUser
+)
+role either at a subnet level, for fine-grained service-project authorization,
+or for all subnets at the host project level.
+Following the principle of least privilege, we recommend granting the network
+user role at the subnet level to the associated user, service account, or
+group.
+Because subnets are regional, this granular control lets you specify which
+regions each service project can use to deploy resources.
+With Shared VPC architectures, you also have the flexibility to deploy multiple
+Shared VPC host projects within your organization. Each Shared VPC host project
+can then accommodate a single or multiple Shared VPC networks. In this
+configuration, different environments can enforce different policy
+concerns.
+For more information, see
+IAM roles for networking
+.
+Use a single host project if resources require multiple network interfaces
+If you have a service project that needs to deploy resources to multiple
+isolated VPC networks—for example, VM instances with multiple
+network interfaces—your host project must contain all of the VPC
+networks that provide the services. This is because a service project is
+allowed to attach to only one host project.
+Use multiple host projects if resource requirements exceed the quota of a single project
+In cases where the aggregate resource requirements of all VPC networks can't be met
+within a project's quota, use an architecture with multiple host projects with a
+single Shared VPC network per host project, rather than a single host project with
+multiple Shared VPC networks. It's important to evaluate your scale requirements,
+because using a single host project requires multiple VPC networks in the host project, and
+quotas are enforced at the project level.
+For an example of this configuration, see the
+Multiple host projects, multiple service projects, multiple Shared VPC reference architecture
+.
+Use multiple host projects if you need separate administration policies for each VPC network
+Because each project has its own quota, use a separate Shared VPC host
+project for every VPC network to scale aggregate resources. This allows each
+VPC network to have separate IAM permissions for networking and security management,
+because IAM permissions are also implemented at the project level. For example,
+if you deploy two VPC networks (VPC network A and VPC network B) into the same host project, the
+network administrator
+(
+networkAdmin
+)
+role applies to both VPC networks.
+Deciding whether to create multiple VPC networks
+Best practices
+:
+Create a single VPC network per project to map VPC network quotas to projects
+.
+Create a VPC network for each autonomous team, with shared services in a common VPC network
+.
+Create VPC networks in different projects for independent IAM controls
+.
+Isolate sensitive data in its own VPC network
+.
+Create a single VPC network per project to map VPC resource quotas to projects
+Quotas
+are constraints applied at the project or network level. All resources
+have an initial default quota meant to protect you from unexpected resource usage.
+However, many factors might lead you to want more quota. For most resources,
+you can
+request additional quota
+.
+We recommend creating a single VPC network per project if you expect to grow beyond the
+default VPC resource quotas. This makes it easier to map project-level quota
+increases to each VPC network rather than to a combination of VPC networks in the same project.
+Limits
+are designed to protect system
+resources in aggregate. Limits generally can't be raised easily, although
+Google Cloud support and sales teams can work with you to increase some
+limits.
+See
+VPC resource quotas and limits
+for current values.
+Google Support can increase some scaling limits, but there might be times when
+you need to build multiple VPC networks to meet your scaling requirements. If your VPC network
+has a requirement to scale beyond the limits, discuss your case with
+Google Cloud sales and support teams about the best approach for your
+requirements.
+Create a VPC network for each autonomous team, with shared services in a common VPC network
+Some large enterprise deployments involve autonomous teams that each
+require full control over their respective VPC networks. You can meet this requirement
+by creating a VPC network for each business unit, with shared services in a common VPC network
+(for example, analytic tools, CI/CD pipeline and build machines, DNS/Directory
+services).
+Create VPC networks in different projects for independent IAM controls
+A VPC network is a project-level resource with fine-grained, project-level
+identity and access management (IAM) controls
+,
+including the following roles:
+networkAdmin
+securityAdmin
+networkUser
+networkViewer
+By default, IAM controls are deployed at the project level and each IAM
+role applies to all VPC networks within the project.
+If you require independent IAM controls per VPC network, create your VPC networks in different
+projects.
+If you require IAM roles scoped to specific Compute Engine resources such as
+VM instances, disks, and images, use
+IAM policies for Compute Engine resources
+.
+Isolate sensitive data in its own VPC network
+For companies that deal with compliance initiatives, sensitive data, or highly
+regulated data that is bound by compliance standards such as HIPAA or PCI-DSS,
+further security measures often make sense. One method that can improve security
+and make it easier to prove compliance is to isolate each of these environments
+into its own VPC network.
+Connecting multiple VPC networks
+Best practices
+:
+Choose the VPC connection method that meets your cost, performance, and security needs
+.
+Use NCC VPC spokes
+.
+Use VPC Network Peering if you need to insert NVAs or if your application doesn't support Private Service Connect
+.
+Use external routing if you don't need private IP address communication
+.
+Use Cloud VPN to connect VPC networks that host service access points that are not transitively reachable over NCC
+.
+Use multi-NIC virtual appliances to control traffic between VPC networks through a cloud device
+.
+Choose the VPC connection method that meets your cost, performance, and security needs
+The next step after deciding to implement multiple VPC networks is connecting those
+VPC networks. VPC networks are isolated tenant spaces within Google's
+Andromeda
+SDN, but there are several ways that you can enable communication between them. The
+subsequent sections provide best practices for choosing a VPC connection method.
+The
+advantages and disadvantages of each are summarized in the following table, and
+subsequent sections provide best practices for choosing a VPC connection
+method.
+Advantages
+Disadvantages
+Network Connectivity Center VPC spokes
+Up to 250 active VPC spokes per hub.
+Export filters.
+Preset topologies.
+Maximum per-VPC VM instance scale without separate peering group quotas.
+Hub-administrator to spoke administrator workflow for cross-organizational VPC connectivity.
+Private Service Connect connection propagation enables transitive reachability of Private Service Connect end-points across VPC spokes.
+Plus all the benefits of VPC Network Peering.
+Source tags and source service accounts of the sending VM are not propagated across sNCC.
+Limited NVA insertion options.
+Inter-VPC transit costs.
+VPC Network Peering
+Easy to configure.
+Low management overhead.
+High bandwidth.
+Low egress charges (same as single VPC network).
+Each VPC network maintains its own distributed firewall.
+Each VPC network maintains its own IAM accounts and permissions.
+Non-transitive.
+Scaling numbers are bound to the
+aggregate
+group of peered
+VPC networks. This includes the number of VMs, routes, and internal forwarding rules.
+Requires non-overlapping address space.
+Static and dynamic routes are not propagated.
+Source tags and source service accounts of the sending VM are not propagated
+across VPC Network Peering.
+External
+routing
+(public IP
+or NAT gateway)
+No configuration needed.
+Full isolation between VPC networks.
+Overlapping IP address space is possible.
+High bandwidth.
+Egress charges for VMs within the same zone are higher than for
+  other options, such as VPC Network Peering.
+VMs need to be exposed using external IP addresses.
+No firewalling using private IP addresses.
+Static and dynamic routes are not propagated.
+Source tags and source service accounts of the sending VM are not honored by
+peered networks.
+Cloud VPN
+Cloud VPN enables transitive topologies for hub and spoke.
+Scalable through ECMP.
+99.99% service availability SLA on HA VPN.
+Management overhead.
+Billed at internet egress rates.
+Slightly higher latency.
+Limited
+throughput per tunnel
+.
+Lower MTU because of additional tunnel encapsulation.
+Source tags and source service accounts of the sending VM are lost
+across the tunnel.
+Multiple
+network interfaces
+(Multi-NIC)
+Scalable through managed instance groups and ECMP routes across
+instances.
+Individual VMs have
+bandwidth limits
+.
+Limited
+number of interfaces
+per VM instance.
+You have to manage the VM instances yourself.
+Use NCC VPC spokes
+We recommend that you use
+NCC VPC spokes
+when you need to connect VPC networks together. NCC VPC spokes allow for address re-use across VPCs in the same project and organization or in a different project and organization.
+NCC VPC spokes is the preferred method for connecting VPC networks for the following reasons:
+The data plane is distributed, so there is no gateway bottleneck. Traffic travels across VPC networks as if the VMs were in the same VPC network.
+Inter-network connectivity across different organizations. Networks include VPCs as well as external networks.
+Up to 250 VPC networks per hub.
+Transitive reachability across VPCs of service access points.
+Integrated inter-VPC Cloud NAT to enable IP address re-use across VPCs.
+Defined network reachability rules using pre-set topologies and prefix filters.
+Use VPC Network Peering if you need to insert NVAs or if your application doesn't support Private Service Connect
+We recommend that you use VPC Network Peering if you need to insert network virtual appliances (NVAs), such as firewall VMs. You might need to insert NVAs for traffic that traverses multiple VPC networks or for private connectivity to services that aren't published by using Private Service Connect.
+When you use VPC Network Peering, ensure that the totals of the resources
+needed for all directly connected peers don't exceed the
+limits
+on VM instances, number of peering
+connections, and internal forwarding rules.
+VPC Network Peering enables two VPC networks to connect with
+each other internally over Google's SDN, whether or not they belong to the same
+project or the same organization. VPC Network Peering merges the control
+plane and flow propagation between each peer, allowing the same forwarding
+characteristics as if all the VMs were in the same VPC network.
+When VPC networks are peered, all subnets, alias IP ranges, and
+internal forwarding rules are accessible, and each VPC network
+maintains its own distributed firewall. VPC Network Peering is not
+transitive.
+Use external routing if you don't need private IP address communication
+If you don't need private IP address communication, you can use external
+routing with external IP addresses or a NAT gateway.
+When a VPC network is deployed, a route to Google's default internet gateway is
+provisioned with a priority of 1000. If this route exists, and a VM is given an
+external IP address, VMs can send outbound (egress) traffic through Google's
+internet gateway. You can also deploy services behind one of Google's many
+public load-balancing offerings, which allows the services to be reached
+externally.
+Externally addressed VMs communicate with each other privately over Google's
+backbone, regardless of region
+and
+Network Service Tiers
+.
+Use Google Cloud firewall rules to control external inbound (ingress) traffic to
+your VMs.
+External routing is a good option for scaling purposes, but it's important to
+understand how public routing affects costs. For details, see the
+Network pricing documentation
+.
+Use Cloud VPN to connect VPC networks that host service access points that are not transitively reachable over NCC
+HA VPN provides a managed service to connect VPC networks by creating
+IPsec tunnels between sets of endpoints. If you configure your Cloud Routers
+with custom advertisement mode, you can enable transitive routing across VPC networks
+and hub-and-spoke topologies as described later in this document.
+Using Network Connectivity Center, you can use HA VPN tunnels as a
+transit network between on-premises networks, as explained in the
+Cloud VPN documentation
+.
+Cloud VPN does not support large MTU. For details, see
+MTU considerations
+.
+Use virtual appliances to control traffic between VPC networks through a cloud device
+Multiple network interface VMs are common for VPC networks that require
+additional security or services between them, because multiple network interface VMs enable VM
+instances to bridge communication between VPC networks.
+To deploy a VM into multiple VPC networks, you must have the
+appropriate IAM permission for each VPC network to which the VM connects.
+When you deploy a multi-NIC VM between VPC networks, remember that the
+subnet IP ranges of the interfaces must not overlap.
+Service connectivity
+Private Service Connect
+allows
+consumers
+to access
+services
+privately from inside their
+VPC network without the need for a network oriented deployment
+model. Similarly, it lets
+producers
+host these services in their own
+separate VPC networks, and they can offer a private connection to
+ their consumers within the same organization or across organizations.
+Private Service Connect enables connectivity to first-party and third-party
+managed services, which eliminates the needs for subnet allocation for private
+services access and VPC Network Peering.
+Private Service Connect offers a service-centric security model with the following benefits:
+No shared dependencies
+Explicit authorization
+Line-rate performance
+Private Service Connect is available in different types that provide different capabilities and modes of communication:
+Private Service Connect
+endpoints
+: Endpoints are
+deployed by using forwarding rules that provide the consumer an IP address
+that is mapped to the Private Service Connect service.
+Private Service Connect
+backends
+: Backends are deployed
+by using network endpoint groups (NEGs) that let consumers direct traffic to
+their load balancer before the traffic reaches a Private Service Connect
+service. If the backends are deployed with an HTTPS load balancer, they can
+support certificates.
+Private Service Connect
+interfaces
+: Interfaces
+let the consumer and producer originate traffic, which enables
+bidirectional communication. Interfaces can be used in the same VPC
+network as endpoints and backends.
+An alternative to Private Service Connect is
+private services
+access
+that allows consumers to connect the producer services through
+VPC Network Peering. When you use private services access, we recommend that
+you consider IP allocation for each producer service, IP overlap, and shared
+quota.
+Hybrid design: connecting an on-premises environment
+Best practices
+:
+Use dynamic routing when possible
+.
+Use a connectivity VPC network to scale a hub-and-spoke architecture with multiple VPC networks
+.
+After you have identified the need for
+hybrid connectivity
+and have chosen a solution that meets your bandwidth, performance, and security
+requirements, consider how to integrate it into your VPC design.
+Using
+Shared VPC
+alleviates the need for each project to replicate the same solution. For
+example, when you integrate a Cloud Interconnect solution into a
+Shared VPC, all VMs—regardless of region or service project—can access the
+Cloud Interconnect connection.
+Use dynamic routing when possible
+Dynamic routing is available on all hybrid solutions, including
+HA VPN, Classic VPN, Dedicated Interconnect, and
+Partner Interconnect. Dynamic routing uses Google's
+Cloud Router as a Border Gateway Protocol (BGP) speaker to provide dynamic
+External BGP (eBGP) routing.
+The Cloud Router is not in the data plane; it only creates routes in
+the SDN.
+Dynamic routing does not use tags, and the Cloud Router never
+re-advertises learned prefixes.
+You can enable either of the Cloud Router's two modes, regional or
+global, on each VPC network. If you choose regional routing, the Cloud Router
+only advertises subnets that co-reside in the region where the
+Cloud Router is deployed. Global routing, on the other hand, advertises
+all subnets of the given VPC network, regardless of region, but does penalize routes that are advertised
+and learned outside of the region. This maintains symmetry within the region by
+always preferring a local interconnect, and is calculated by adding a penalty
+metric (MED) equal to 200 + TTL in milliseconds between regions.
+Static routing
+Static routing is only available on Classic VPN. Static routing offers
+the ability to set a next-hop route pointing at a Cloud VPN tunnel.
+By default, a static route applies to all VMs in the network regardless of region. Static
+routing also lets network administrators selectively set which VMs the route
+applies to by using instance tags, which can be specified when you create a
+route.
+Static routes apply globally within the VPC network, with the same route priority as
+each other. Therefore, if you have multiple tunnels in multiple regions to the
+same prefix with the same priority, a VM will use 5-tuple hash-based ECMP across
+all tunnels. To optimize this setup, you can create a preferred in-region route
+by referencing instance tags for each region and creating preferred routes
+accordingly.
+If you don't want outbound (egress) traffic to go through Google's default
+internet gateway, you can set a preferred default static route to send all
+traffic back on-premises through a tunnel.
+Use a connectivity VPC network to scale a hub-and-spoke architecture with multiple VPC networks
+If you need to scale a hub-and-spoke architecture with multiple VPC networks,
+configure centralized hybrid connectivity in one or more dedicated VPC networks,
+then add the hybrid connections and all of the VPC spokes to a NCC hub.
+You'll need to enable
+route exchange with VPC
+spokes
+.
+This configuration allows static routes or dynamically learned routes to be exported to VPC spokes in
+order to provide centralized configuration and scale to your VPC network design.
+The following diagram illustrates a centralized hybrid connectivity design
+using NCC:
+Alternatively, you can use VPC Network Peering and custom advertised routes
+to provide access to shared hybrid connections, if you won't exceed resource
+limits and you require the use of NVAs.
+The following diagram illustrates centralized hybrid connectivity with
+VPC Network Peering custom routes:
+This centralized design is in contrast to conventional hybrid connectivity deployment, which uses
+VPN tunnels or VLAN attachments in each individual VPC network.
+Network security
+Best practices
+:
+Identify clear security objectives
+.
+Limit external access
+.
+Define service perimeters for sensitive data
+.
+Manage traffic with Google Cloud firewall rules when possible
+.
+Use fewer, broader firewall rule sets when possible
+.
+Isolate VMs using service accounts when possible
+.
+Use automation to monitor security policies when using tags
+.
+Use additional tools to help secure and protect your apps
+.
+Google Cloud provides robust security features across its infrastructure
+and services, from the physical security of data centers and custom security
+hardware to dedicated teams of researchers. However, securing your
+Google Cloud resources is a shared responsibility. You must take
+appropriate measures to help ensure that your apps and data are protected.
+Identify clear security objectives
+Before evaluating either cloud-native or cloud-capable security controls, start
+with a set of clear security objectives that all stakeholders
+agree to as a fundamental part of the product. These objectives should emphasize
+achievability, documentation, and iteration, so that they can be referenced and
+improved throughout development.
+Limit external access
+When you create a Google Cloud resource that uses a VPC network, you
+choose a network and subnet where the resource resides. The resource is assigned
+an internal IP address from one of the IP ranges associated with the subnet.
+Resources in a VPC network can communicate among themselves through internal IP
+addresses if firewall rules permit.
+Limit access to the internet to only those resources that need it. Resources
+with only a private, internal IP address can still access many Google APIs and
+services through Private Service Connect or
+Private Google Access. Private access enables
+resources to interact with key Google and Google Cloud services while
+remaining isolated from the public internet.
+Additionally, use
+organizational policies
+to further restrict which resources are allowed to use external IP addresses.
+To allow VMs to access the internet, use Secure Web Proxy if the traffic can be
+downloaded over HTTP(S) and you want to implement identity controls. Otherwise,
+use Cloud NAT.
+Define service perimeters for sensitive data
+For workloads involving sensitive data, use
+VPC Service Controls
+to configure service perimeters around your VPC resources and Google-managed
+services and control the movement of data across the perimeter boundary. Using
+VPC Service Controls, you can group projects and your on-premises network into
+a single perimeter that prevents data access through Google-managed services.
+Service perimeters can't contain projects from different organizations, but
+you can use perimeter bridges to allow projects and services in different
+service perimeters to communicate.
+Manage traffic with Google Cloud firewall rules when possible
+Google Cloud VPC includes a stateful firewall that is horizontally
+scalable and applied to each VM in a distributed manner. See the
+Cloud NGFW overview
+for details.
+Google Cloud Marketplace features a large ecosystem of third-party solutions,
+including VMs that do the following: provide advanced security, such as
+protection from information leakage, application exploits, and escalation of
+privileges; detect known and unknown threats; and apply URL filtering. There are
+also operational benefits to having a single vendor implement policy across
+cloud service providers and on-premises environments.
+Traffic is typically routed to these VMs by specifying routes, either with
+the same priority (to distribute the traffic using a 5-tuple hash) or with
+different priorities (to create a redundant path), as shown in the multiple
+paths to the Dev-subnet in the following diagram.
+Most solutions require multiple network interface VMs.
+Scale is also an important consideration when deploying third-party solutions
+into your VPC network for the following reasons:
+Limits: Most VM-based appliances must be inserted into the data
+path. This requires a multiple network interface VM that bridges multiple VPC networks that reside in
+the same project. Because VPC resource quotas are set at the project level, the
+aggregate resource needs across all VPC networks can become limiting.
+Performance: Introducing a single VM-based chokepoint into the fully
+horizontal scalability attributes of a VPC network goes against cloud design
+methodologies. To mitigate this, you can place multiple network virtual
+appliances (NVAs) into a managed instance group behind an internal passthrough Network Load Balancer.
+To account for these factors in high-scale requirement architectures, push
+security controls to your endpoints. Start by hardening your VMs and using Google Cloud
+firewall rules. This strategy can also involve introducing host-based endpoint
+inspection agents that don't change the forwarding architecture of your VPC network
+through multiple network interface VMs.
+For an additional example of this configuration, see the
+Stateful L7 firewall between VPC networks reference architecture
+.
+Use fewer, broader firewall rule sets when possible
+Only a certain number of rules can be programmed on any
+VM. However, you can combine many rules into one complex rule
+definition. For example, if all VMs in the VPC network need to explicitly allow 10
+ingress TCP ports, you have two options: write 10 separate rules, each defining
+a single port, or define a single rule that includes all 10 ports. Defining a
+single rule that includes all 10 ports is the more efficient option.
+Create a generic rule set that applies to the entire VPC network, and then use more
+specific rule sets for smaller groupings of VMs using
+targets
+.
+In other words, start by defining broad rules, and progressively define rules
+more narrowly as needed:
+Apply firewall rules that are common across all VMs in the VPC network.
+Apply firewall rules that can be grouped across several VMs, like a
+service instance group or subnet.
+Apply firewall rules to individual VMs, such as a NAT gateway or bastion
+host.
+Isolate VMs using service accounts when possible
+Many organizations have environments that require specific rules for a
+subset of the VMs in a VPC network. There are two common approaches that you can take in
+these cases: subnet isolation and target filtering.
+Subnet isolation
+With subnet isolation, the
+subnet
+forms the security boundary across which Google Cloud firewall rules are applied.
+This approach is common in on-premises networking constructs and in cases where
+IP addresses and network placement form part of the VM identity.
+You can identify the VMs on a specific subnet by
+applying a unique
+Tag
+, network tag, or
+service account to those instances. This lets you create firewall rules that
+only apply to the VMs in a subnet—those with
+the associated Tag, network tag, service account. For example, to create a firewall
+rule that permits all communication between VMs in the same subnet, you can use
+the following rule configuration on the
+Firewall rules page
+:
+Targets
+:
+Specified target tags
+Target tags
+:
+subnet-1
+Source filter
+:
+Subnets
+Subnets
+: Select subnet by name (example:
+subnet-1
+).
+Target filtering
+With target filtering, all VMs either reside on the same subnet or are part
+of an arbitrary set of subnets. With this approach, subnet membership is not
+considered part of the instance identity for firewall rules. Instead, you can
+use Tags, network tags, or service accounts to restrict access between VMs in the same
+subnet. Each group of VMs that uses the same firewall rules has the same network
+tag applied.
+To illustrate this, consider a three-tier (web, app, database) application for
+which all of the instances are deployed in the same subnet. The web tier can
+communicate with end users and the app tier, and the app tier can communicate
+with the database tier, but no other communication between tiers is allowed. The
+instances running the web tier have a network tag of
+web
+, the instances
+running the app tier have a network tag of
+app
+, and the instances running the
+database tier have a network tag of
+db
+.
+The following firewall rules implement this approach:
+Rule 1: Permit end-users → web tier
+Targets
+:
+Specified target tags
+Target tags
+:
+web
+Source filter
+:
+IP ranges
+Source IP ranges
+:
+0.0.0.0/0
+Rule 2: Permit web tier → app tier
+Targets
+:
+Specified target tags
+Target tags
+:
+app
+Source filter
+:
+Source tags
+Source tags
+:
+web
+Rule 3: Permit app tier → database tier
+Targets
+:
+Specified target tags
+Target tags
+:
+db
+Source filter
+:
+Source tags
+Source tags
+:
+app
+However, even though it is possible to use network tags for target filtering in this
+manner, we recommend that you use Tags or service accounts where possible. Target tags
+are not access-controlled and can be changed by someone with the
+instanceAdmin
+role while VMs are in service. Tags and service accounts are access-controlled, meaning
+that a specific user must be explicitly authorized to use a service account.
+There can only be one service account per instance, whereas there can be
+multiple tags. Also, service accounts assigned to a VM can only be changed when
+the VM is stopped.
+Use automation to monitor security policies when using tags
+If you use network tags, remember that an instance administrator can change those tags.
+This can circumvent security policy. Therefore, if you do use network tags in a
+production environment, use an automation framework to help you overcome the
+lack of IAM governance over the network tags.
+Use additional tools to help secure and protect your apps
+In addition to firewall rules, use these additional tools to help secure and
+protect your apps:
+Use a Google Cloud global
+HTTP(S) load balancer
+to support high availability and protocol normalization.
+Integrate
+Google Cloud Armor
+with the HTTP(S) load balancer to provide DDoS protection and the ability
+to block or allow IP addresses at the network edge.
+Control access to apps by using
+IAP
+(IAP) to verify user identity and the context of the request
+to determine if a user should be granted access.
+Provide a single interface for security insights, anomaly detection, and
+vulnerability detection with
+Security Command Center
+.
+Network services: NAT and DNS
+Best practices
+:
+Use fixed external IP addresses with Cloud NAT
+.
+Reuse IP addresses across VPCs with Cloud NAT
+.
+Use Private DNS zones for name resolution
+.
+Use fixed external IP addresses with Cloud NAT
+If you need fixed external IP addresses from a range of VMs, use
+Cloud NAT
+.
+An example of why you might need fixed outbound IP addresses is the case in
+which a third party allows requests from specific external IP addresses. Using
+Cloud NAT lets you have a small number of NAT IP addresses
+for each region that are used for outbound communications.
+Cloud NAT also allows your VM instances to communicate across
+the internet without having their own external IP addresses. Google Cloud firewall
+rules are stateful. This means that if a connection is allowed between a source
+and a target or a target and a destination, then all subsequent traffic in either
+direction will be allowed as long as the connection is active. In other words,
+firewall rules allow bidirectional communication after a session is established.
+Reuse IP addresses across VPCs with Cloud NAT
+IP addresses can be reused across VPCs when Cloud NAT for
+NCC is enabled. Inter-VPC Cloud NAT is available when
+VPCs are connected using NCC VPC spokes. If the VPC IP addresses overlap with ranges in external networks, enable
+Hybrid NAT
+. Only connections initiated
+from workloads in Google Cloud towards external networks are translated.
+Use private DNS zones for name resolution
+Use
+private zones on Cloud DNS
+to allow your services to be resolved with DNS within your VPC network using their
+internal IP addresses without exposing this mapping to the outside.
+Use
+split horizon DNS
+to map services to different IP addresses from within the VPC network than
+from the outside. For example, you can have a service exposed through network
+load balancing from the public internet, but have internal load balancing
+provide the same service using the same DNS name from within the VPC network.
+API access for Google managed services
+Best practices
+:
+Use the default internet gateway where possible
+.
+Add explicit routes for Google APIs if you need to modify the default route
+.
+Deploy instances that use Google APIs on the same subnet
+.
+Use the default internet gateway where possible
+Access from resources within the VPC network to Google APIs follows the default
+internet gateway next-hop. Despite the next-hop gateway's name, the traffic path
+from instances to the Google APIs remains within Google's network.
+By default, only VM instances with an external IP address can communicate with
+Google APIs and services. If you need access from instances without an external
+IP address, set up Private Service Connect endpoints or use the
+Private Google Access feature for each subnet. This
+doesn't slow down communications for Google APIs.
+Google Kubernetes Engine (GKE) automatically enables
+Private Google Access on subnets where nodes are deployed. All nodes on
+these subnets without an external IP address are able to access Google managed
+services.
+Add explicit routes for Google APIs if you need to modify the default route
+If you need to modify the default route, then add explicit routes for Google
+API destination IP ranges.
+In environments where the default route (
+0.0.0.0/0
+) doesn't use the default
+internet gateway next-hop, configure explicit routes for the
+destination IP address ranges
+used by Google APIs. Set the next-hop of the explicit routes to the default
+internet gateway. An example of such a scenario is when you need to inspect all
+traffic through an on-premises device.
+Deploy instances that use Google APIs on the same subnet
+Deploy instances that require access to Google APIs and services on the same
+subnet and enable Private Google Access for instances without external
+IP addresses. Alternatively, set up Private Service Connect endpoints.
+If you are accessing Google APIs from your on-premises environment using
+Private Google Access, use
+Configuring Private Google Access for on-premises hosts
+to access some Google services over private IP address ranges. Check to see
+which
+services are supported
+before activating this feature, because access to other Google APIs through
+the IP addresses provided by this service will be unreachable. Activating this
+feature can require additional DNS configuration, such as configuring DNS
+Views.
+If you are accessing Google APIs from your on-premises environment using
+Private Service Connect endpoints, see
+Access the endpoint from
+on-premises hosts
+for details.
+Logging, monitoring, and visibility
+Best practices
+:
+Tailor logging for specific use cases and intended audiences
+.
+Increase the log aggregation interval for VPC networks with long connections
+.
+Use VPC Flow Logs sampling to reduce volume
+.
+Remove additional metadata when you only need IP and port data
+.
+Use Network Intelligence Center to get insights into your networks
+Tailor logging for specific use cases and intended audiences
+Use
+VPC Flow Logs
+for network monitoring, forensics, real-time security analysis, and expense
+optimization. You can enable or disable VPC Flow Logs at the subnet level.
+If VPC Flow Logs are enabled for a subnet, it collects data from all VM
+instances in that subnet.
+These logs record a sample of network flows that VM instances send and receive.
+Your logging use cases help to determine which subnets you decide
+require logging, and for how long.
+Flow logs are aggregated by connection at 5-second intervals from
+Compute Engine VMs and then exported in real time. You can view flow logs in
+Cloud Logging and export them to any destination that Cloud Logging export
+supports.
+The logs ingestion page in Logging tracks the volume of logs in
+your project and lets you disable all logs ingestion or exclude (discard) log
+entries you're not interested in, so that you can minimize any charges for logs
+over your monthly allotment.
+Logs are a critical part of both operational and security success, but they
+aren't useful unless you review them and take action. Tailor logs for their
+intended audience, which helps to ensure operational and security success for
+your VPC networks.
+For details, see
+Using VPC Flow Logs
+.
+Increase log aggregation interval for VPC networks with long connections
+For VPC networks with mostly long-lived connections, set the log aggregation interval
+to 15 minutes to greatly reduce the number of logs generated and to enable
+quicker and simpler analysis.
+An example workflow for which increasing the log aggregation interval is
+appropriate is network monitoring, which involves the following tasks:
+Performing network diagnosis
+Filtering the flow logs by VMs and by applications to understand traffic
+changes
+Analyzing traffic growth to forecast capacity
+Use VPC Flow Logs sampling to reduce volume
+Use VPC Flow Logs sampling to reduce the volume of VPC Flow Logs, but still be
+able to see low-level samples and aggregated views.
+An example workflow for which using sampling to reduce volume is appropriate is
+understanding network usage and optimizing network traffic expense. This workflow
+involves the following tasks:
+Estimating traffic between regions and zones
+Estimating traffic to specific countries on the internet
+Identifying top talkers
+Remove additional metadata when you only need IP and port data
+In security use cases where you are only interested in IP addresses and ports,
+remove the additional metadata to reduce the volume of data consumed in
+Cloud Logging.
+An example workflow for which removing metadata is appropriate is network
+forensics, which involves the following tasks:
+Determining which IPs talked with whom and when
+Identifying any compromised IP addresses, found by analyzing network flows
+Use Network Intelligence Center to get insights into your networks
+Network Intelligence Center
+provides a single
+console for managing Google Cloud network visibility, monitoring, and
+troubleshooting. The following sections provide details about the Network Intelligence Center
+components.
+Network Topology
+Use
+Network Topology
+to visualize your network topology.
+Connectivity Tests
+Use
+Connectivity Tests
+to help diagnose connectivity issues with your VPC networks.
+Performance Dashboard
+Use
+Performance Dashboard
+to check on the performance of the physical networking underlying your
+VPC virtual networks.
+Firewall Insights
+Use
+Firewall Insights
+to gain understandings about your firewall rules and how they interact.
+Network Analyzer
+Use
+Network Analyzer
+to monitor your VPC network configurations and to detect
+misconfigurations and suboptimal configurations.
+Flow Analyzer
+Use
+Flow Analyzer
+to gain a better understanding of VPC traffic flows.
+Reference architectures
+This section highlights a few architectures that illustrate some of the best
+practices in this document.
+Single project, single VPC network
+This initial reference architecture includes all of the components necessary to
+deploy highly available architectures across multiple regions, with subnet-level
+isolation and a 99.99% SLA connecting to your on-premises data centers.
+Single host project, multiple service projects, single Shared VPC
+Building on the initial reference architecture, Shared VPC host projects and
+multiple service projects let administrators delegate administrative
+responsibilities—such as creating and managing instances—to Service Project
+Admins while maintaining centralized control over network resources like
+subnets, routes, and firewalls.
+Multiple host projects, multiple service projects, multiple Shared VPC
+The following diagram illustrates an architecture for VPC isolation, which
+builds on our high-availability design while separating prod from other
+projects. There are many reasons to consider VPC isolation, including audit requirements (such as
+PCI), quota considerations between environments, or just another layer of
+logical isolation. You only require two interconnects (for redundancy)
+per location but can add multiple Interconnect attachments to multiple VPC networks or
+regions from those.
+Using isolation can also introduce the need for replication, as you decide where to
+place core services such as proxies, authentication, and directory services.
+Using a Shared Services VPC network can help to avoid this replication, and allow
+you to share these services with other VPC networks through NCC, while at the
+same time centralizing administration and deployment.
+Stateful L7 firewall between VPC networks
+This
+architecture has multiple VPC networks that are bridged by an L7 next-generation firewall (NGFW) appliance, which
+functions as a multi-NIC bridge between VPC networks.
+An untrusted, outside VPC network is introduced to terminate
+hybrid interconnects and internet-based connections that terminate on the
+outside leg of the L7 NGFW for inspection. There are many variations on this
+design, but the key principle is to filter traffic through the firewall before
+the traffic reaches trusted VPC networks.
+This design requires each VPC network to reside in the project where you insert the
+VM-based NGFW. Because quotas are enforced at the project level, you must
+consider the aggregate of all VPC resources.
+Multiple VPC networks interconnected with NCC
+This architecture has multiple VPC networks that connect to each other using
+NCC. A transit VPC network is introduced to terminate hybrid
+interconnects and share the hybrid connectivity across all other
+VPCs, which avoids the need to create VLAN attachments for each
+VPC network. This approach consolidates the
+external connectivity and its associated routing considerations. Similarly, one
+or more shared services VPC networks can be introduced to host common services
+such as proxies, authentication, and directory services. There are many
+variations on this design, but the key principle is to handle the different
+services and connection types as spokes to a NCC hub that
+provides any-to-any connectivity amongst these. This reference architecture is
+described in detail in
+Cross-Cloud Network inter-VPC connectivity using Network Connectivity Center
+.
+What's next
+Cross-Cloud Network for distributed applications
+VPC deep dive and best practices (Cloud NEXT'18 video)
+Hybrid and multi-cloud network topologies
+Decide a resource hierarchy for your Google Cloud landing zone
+Best practices for Compute Engine region selection
+Google Cloud for data center professionals: networking
+VPC documentation
+GKE networking overview
+Explore reference architectures, diagrams, and best practices about Google Cloud.
+Take a look at our
+Cloud Architecture Center
+.
+Send feedback
+Except as otherwise noted, the content of this page is licensed under the
+Creative Commons Attribution 4.0 License
+, and code samples are licensed under the
+Apache 2.0 License
+. For details, see the
+Google Developers Site Policies
+. Java is a registered trademark of Oracle and/or its affiliates.
+Last updated 2025-01-30 UTC.

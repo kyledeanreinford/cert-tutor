@@ -1,0 +1,120 @@
+Hybrid and multicloud architecture patterns  |  Cloud Architecture Center  |  Google Cloud Documentation
+Skip to main content
+Send feedback
+Hybrid and multicloud architecture patterns
+Stay organized with collections
+Save and categorize content based on your preferences.
+Last reviewed 2024-10-24 UTC
+This document is the second of three documents in a set. It discusses common hybrid and
+multicloud architecture patterns. It also describes the scenarios that these
+patterns are best suited for. Finally, it provides the best practices you can
+use when deploying such architectures in Google Cloud.
+The document set for hybrid and multicloud architecture patterns consists of
+these parts:
+Build hybrid and multicloud architectures
+:
+discusses planning a strategy for architecting a hybrid and multicloud
+setup with Google Cloud.
+Hybrid and multicloud architecture patterns: discusses common architecture
+patterns to adopt as part of a hybrid and multicloud strategy (this document).
+Hybrid and multicloud secure networking architecture patterns
+:
+discusses hybrid and multicloud networking architecture patterns from a
+networking perspective.
+Every enterprise has a unique portfolio of application workloads that place
+requirements and constraints on the architecture of a hybrid or multicloud
+setup. Although you must design and tailor your architecture to meet these
+constraints and requirements, you can rely on some common patterns to define the foundational architecture.
+An architecture pattern is a repeatable way to structure multiple functional
+components of a technology solution, application, or service to create a
+reusable solution that addresses certain requirements or use cases. A
+cloud-based technology solution is often made of several distinct and
+distributed cloud services. These services collaborate to deliver required
+functionality. In this context, each service is considered a functional
+component of the technology solution. Similarly, an application can consist of
+multiple functional tiers, modules, or services, and each can represent a
+functional component of the application architecture. Such an architecture can
+be standardized to address specific business use cases and serve as a
+foundational, reusable pattern.
+To generally define an architecture pattern for an application or solution,
+identify and define the following:
+The components of the solution or application.
+The expected functions for each component—for example, frontend
+functions to provide a graphical user interface or backend functions to
+provide data access.
+How the components communicate with each other and with external systems
+or users. In modern applications, these components interact through
+well-defined interfaces or APIs. There are a wide range of communication
+models such as asynchronous and synchronous, request-response, or
+queue-based.
+The following are the two main categories of hybrid and multicloud architecture
+patterns:
+Distributed architecture patterns
+:
+These patterns rely on a distributed deployment of workloads or application
+components. That means they run an application (or specific components of
+that application) in the computing environment that suits the pattern best.
+Doing so lets the pattern capitalize on the different properties and
+characteristics of distributed and interconnected computing environments.
+Redundant architecture patterns:
+These patterns are based on redundant deployments of workloads. In these
+patterns, you deploy the same applications and their components in multiple
+computing environments. The goal is to either increase the performance
+capacity or resiliency of an application, or to replicate an existing
+environment for development and testing.
+When you implement the architecture pattern that you select, you must use a
+suitable
+deployment archetype
+.
+Deployment archetypes are zonal, regional, multi-regional, or global. This
+selection forms the basis for constructing application-specific deployment
+architectures. Each deployment archetype defines a combination of failure
+domains within which an application can operate. These failure domains can
+encompass one or more
+Google Cloud zones or regions
+,
+and can be expanded to include your on-premises data centers or failure domains
+in other cloud providers.
+This series contains the following pages:
+Distributed architecture patterns
+Tiered hybrid pattern
+Partitioned multicloud pattern
+Analytics hybrid and multicloud pattern
+Edge hybrid pattern
+Redundant architecture patterns
+Environment hybrid pattern
+Business continuity hybrid and multicloud patterns
+Cloud bursting pattern
+Contributors
+Author:
+Marwan Al Shawi
+| Partner Customer Engineer
+Other contributors:
+Saud Albazei
+| Customer Engineer, Application Modernization
+Anna Berenberg
+| Engineering Fellow
+Marco Ferrari
+| Cloud Solutions Architect
+Victor Moreno
+| Product Manager, Cloud Networking
+Johannes Passing
+| Cloud Solutions Architect
+Mark Schlagenhauf
+| Technical Writer, Networking
+Daniel Strebel
+| EMEA Solution Lead, Application Modernization
+Ammett Williams
+| Developer Relations Engineer
+Next
+Distributed architecture patterns
+arrow_forward
+Send feedback
+Except as otherwise noted, the content of this page is licensed under the
+Creative Commons Attribution 4.0 License
+, and code samples are licensed under the
+Apache 2.0 License
+. For details, see the
+Google Developers Site Policies
+. Java is a registered trademark of Oracle and/or its affiliates.
+Last updated 2024-10-24 UTC.

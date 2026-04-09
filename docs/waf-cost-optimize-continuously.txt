@@ -1,0 +1,164 @@
+Optimize continuously  |  Cloud Architecture Center  |  Google Cloud Documentation
+Skip to main content
+Send feedback
+Optimize continuously
+Stay organized with collections
+Save and categorize content based on your preferences.
+Last reviewed 2024-09-25 UTC
+This principle in the cost optimization pillar of the
+Google Cloud Well-Architected Framework
+provides recommendations to help you optimize the cost of your cloud deployments
+based on constantly changing and evolving business goals.
+As your business grows and evolves, your cloud workloads need to adapt to changes
+in resource requirements and usage patterns. To derive maximum value from your
+cloud spending, you must maintain cost-efficiency while continuing to support
+business objectives. This requires a proactive and adaptive approach that focuses
+on continuous improvement and optimization.
+Principle overview
+To optimize cost continuously, you must proactively monitor and analyze your
+cloud environment and make suitable adjustments to meet current requirements.
+Focus your monitoring efforts on key performance indicators (KPIs) that directly
+affect your end users' experience, align with your business goals, and provide
+insights for continuous improvement. This approach lets you identify and address
+inefficiencies, adapt to changing needs, and continuously align cloud spending
+with strategic business goals. To balance comprehensive observability with cost
+effectiveness, understand the costs and benefits of monitoring resource usage
+and use appropriate process-improvement and optimization strategies.
+Recommendations
+To effectively monitor your Google Cloud environment and optimize cost
+continuously, consider the following recommendations.
+Focus on business-relevant metrics
+Effective monitoring starts with identifying the metrics that are most important
+for your business and customers. These metrics include the following:
+User experience metrics
+: Latency, error rates, throughput, and customer
+satisfaction metrics are useful for understanding your end users' experience
+when using your applications.
+Business outcome metrics
+: Revenue, customer growth, and engagement can
+be correlated with resource usage to identify opportunities for cost
+optimization.
+DevOps Research & Assessment (DORA)
+metrics
+: Metrics
+like deployment frequency, lead time for changes, change failure rate, and
+time to restore provide insights into the efficiency and reliability of your
+software delivery process. By improving these metrics, you can increase
+productivity, reduce downtime, and optimize cost.
+Site Reliability Engineering (SRE)
+metrics
+: Error
+budgets help teams to quantify and manage the acceptable level of service
+disruption. By establishing clear expectations for reliability, error budgets
+empower teams to innovate and deploy changes more confidently, knowing their
+safety margin. This proactive approach promotes a balance between innovation
+and stability, helping prevent excessive operational costs associated with
+major outages or prolonged downtime.
+Use observability for resource optimization
+The following are recommendations to use observability to identify resource
+bottlenecks and underutilized resources in your cloud deployments:
+Monitor resource utilization
+: Use resource utilization metrics to identify
+Google Cloud resources that are underutilized. For example, use metrics
+like CPU and memory utilization to identify
+idle VM resources
+.
+For Google Kubernetes Engine (GKE), you can view a detailed
+breakdown of costs
+and
+cost-related optimization metrics
+.
+For Google Cloud VMware Engine,
+review resource utilization
+to optimize CUDs, storage consumption, and ESXi right-sizing.
+Use cloud recommendations
+:
+Active Assist
+is a portfolio of intelligent tools that help you optimize your cloud
+operations. These tools provide actionable recommendations to reduce costs,
+increase performance, improve security and even make sustainability-focused
+decisions. For example,
+VM rightsizing insights
+can help to optimize resource allocation and avoid unnecessary spending.
+Correlate resource utilization with performance
+: Analyze the relationship
+between resource utilization and application performance to determine whether
+you can downgrade to less expensive resources without affecting the user
+experience.
+Balance troubleshooting needs with cost
+Detailed observability data can help with diagnosing and troubleshooting issues.
+However, storing excessive amounts of observability data or exporting unnecessary
+data to external monitoring tools can lead to unnecessary costs. For efficient
+troubleshooting, consider the following recommendations:
+Collect sufficient data for troubleshooting
+: Ensure that your monitoring
+solution captures enough data to efficiently diagnose and resolve issues when
+they arise. This data might include logs, traces, and metrics at various
+levels of granularity.
+Use sampling and aggregation
+: Balance the need for detailed data with
+cost considerations by using sampling and aggregation techniques. This approach
+lets you collect representative data without incurring excessive storage costs.
+Understand the pricing models of your monitoring tools and services
+: Evaluate
+different monitoring solutions and choose options that align with your
+project's specific needs, budget, and usage patterns. Consider factors like
+data volume, retention requirements, and the required features when
+making your selection.
+Regularly review your monitoring configuration
+: Avoid collecting excessive
+data by removing unnecessary metrics or logs.
+Tailor data collection to roles and set role-specific retention policies
+Consider the specific data needs of different roles. For example, developers
+might primarily need access to traces and application-level logs, whereas IT
+administrators might focus on system logs and infrastructure metrics. By tailoring
+data collection, you can reduce unnecessary storage costs and avoid overwhelming
+users with irrelevant information.
+Additionally, you can define retention policies based on the needs of each role
+and any regulatory requirements. For example, developers might need access to
+detailed logs for a shorter period, while financial analysts might require
+longer-term data.
+Consider regulatory and compliance requirements
+In certain industries, regulatory requirements mandate data retention. To avoid
+legal and financial risks, you need to ensure that your monitoring and data
+retention practices help you adhere to relevant regulations. At the same time,
+you need to maintain cost efficiency. Consider the following recommendations:
+Determine the specific data retention requirements for your industry or region,
+and ensure that your monitoring strategy meets the requirements of those
+requirements.
+Implement appropriate data archival and retrieval mechanisms to meet audit
+and compliance needs while minimizing storage costs.
+Implement smart alerting
+Alerting helps to detect and resolve issues in a timely manner. However, a
+balance is necessary between an approach that keeps you informed, and one that
+overwhelms you with notifications. By designing intelligent alerting systems,
+you can prioritize critical issues that have higher business impact. Consider
+the following recommendations:
+Prioritize issues that affect customers
+: Design alerts that trigger
+rapidly for issues that directly affect the customer experience, like website
+outages, slow response times, or transaction failures.
+Tune for temporary problems
+: Use appropriate thresholds and delay
+mechanisms to avoid unnecessary alerts for temporary problems or self-healing
+system issues that don't affect customers.
+Customize alert severity
+: Ensure that the most urgent issues receive
+immediate attention by differentiating between critical and noncritical
+alerts.
+Use notification channels wisely
+: Choose appropriate channels for alert
+notifications (email, SMS, or paging) based on the severity and urgency of
+the alerts.
+Previous
+arrow_back
+Optimize resource usage
+Send feedback
+Except as otherwise noted, the content of this page is licensed under the
+Creative Commons Attribution 4.0 License
+, and code samples are licensed under the
+Apache 2.0 License
+. For details, see the
+Google Developers Site Policies
+. Java is a registered trademark of Oracle and/or its affiliates.
+Last updated 2024-09-25 UTC.

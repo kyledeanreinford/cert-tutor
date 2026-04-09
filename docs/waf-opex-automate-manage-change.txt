@@ -1,0 +1,216 @@
+Automate and manage change  |  Cloud Architecture Center  |  Google Cloud Documentation
+Skip to main content
+Send feedback
+Automate and manage change
+Stay organized with collections
+Save and categorize content based on your preferences.
+Last reviewed 2024-10-31 UTC
+This principle in the operational excellence pillar of the
+Google Cloud Well-Architected Framework
+provides recommendations to help you automate and manage change for your cloud
+workloads. It involves implementing infrastructure as code (IaC), establishing
+standard operating procedures, implementing a structured change management
+process, and using automation and orchestration.
+Principle overview
+Change management and automation play a crucial role in ensuring smooth and
+controlled transitions within cloud environments. For effective change
+management, you need to use strategies and best practices that minimize
+disruptions and ensure that changes are integrated seamlessly with existing
+systems.
+Effective change management and automation include the following foundational
+elements:
+Change governance
+: Establish clear policies and procedures for
+change management, including approval processes and communication plans.
+Risk assessment
+: Identify potential risks associated with
+changes and mitigate them through risk management techniques.
+Testing and validation
+: Thoroughly test changes to ensure that they
+meet functional and performance requirements and mitigate potential regressions.
+Controlled deployment
+: Implement changes in a controlled manner,
+ensuring that users are seamlessly transitioned to the new environment, with
+mechanisms to seamlessly roll back if needed.
+These foundational elements help to minimize the impact of changes and ensure
+that changes have a positive effect on business operations. These elements are
+represented by the processes, tooling, and governance
+focus areas of operational readiness
+.
+Recommendations
+To automate and manage change, consider the recommendations in the following
+sections. Each recommendation in this document is relevant to one or more of the
+focus areas of operational readiness
+.
+Adopt IaC
+Infrastructure as code (IaC) is a transformative approach for managing cloud
+infrastructure. You can define and manage cloud infrastructure declaratively by
+using tools like
+Terraform
+.
+IaC helps you achieve consistency, repeatability, and simplified change
+management. It also enables faster and more reliable deployments. This
+recommendation is relevant to these
+focus areas of operational readiness
+:
+processes and tooling.
+The following are the main benefits of adopting the IaC approach for your cloud
+deployments:
+Human-readable resource configurations
+: With the IaC approach, you
+can declare your cloud infrastructure resources in a human-readable format,
+like JSON or YAML. Infrastructure administrators and operators can easily
+understand and modify the infrastructure and collaborate with others.
+Consistency and repeatability
+: IaC enables consistency and
+repeatability in your infrastructure deployments. You can ensure that your
+infrastructure is provisioned and configured the same way every time,
+regardless of who is performing the deployment. This approach helps to
+reduce errors and ensures that your infrastructure is always in a known state.
+Accountability and simplified troubleshooting
+: The IaC approach
+helps to improve accountability and makes it easier to troubleshoot issues.
+By storing your IaC code in a version control system, you can track
+changes, and identify when changes were made and by whom. If necessary, you
+can easily roll back to previous versions.
+Implement version control
+A version control system like Git is a key component of the IaC process. It
+provides robust change management and risk mitigation capabilities, which is why
+it's widely adopted, either through in-house development or SaaS solutions. This
+recommendation is relevant to these
+focus areas of operational readiness
+:
+governance and tooling.
+By tracking changes to IaC code and configurations, version control provides
+visibility into the evolution of the code, making it easier to understand the
+impact of changes and identify potential issues. This enhanced visibility
+fosters collaboration among team members who work on the same IaC project.
+Most version control systems let you easily roll back changes if needed. This
+capability helps to mitigate the risk of unintended consequences or errors. By
+using tools like Git in your IaC workflow, you can significantly improve change
+management processes, foster collaboration, and mitigate risks, which leads to a
+more efficient and reliable IaC implementation.
+Build CI/CD pipelines
+Continuous integration and continuous delivery (CI/CD) pipelines streamline the
+process of developing and deploying cloud applications. CI/CD pipelines automate
+the building, testing, and deployment stages, which enables faster and more
+frequent releases with improved quality control. This recommendation is relevant
+to the tooling
+focus area of operational readiness
+.
+CI/CD pipelines ensure that code changes are continuously integrated into a
+central repository, typically a version control system like Git. Continuous
+integration facilitates early detection and resolution of issues, and it reduces
+the likelihood of bugs or compatibility problems.
+To create and manage CI/CD pipelines for cloud applications, you can use tools
+like
+Cloud Build
+and
+Cloud Deploy
+.
+Cloud Build
+is a fully managed build service that lets developers
+define and execute build steps in a declarative manner. It integrates
+seamlessly with popular source-code management platforms and it can be
+triggered by events like code pushes and pull requests.
+Cloud Deploy
+is a serverless deployment service that automates the
+process of deploying applications to various environments, such as testing,
+staging, and production. It provides features like blue-green deployments,
+traffic splitting, and rollback capabilities, making it easier to manage
+and monitor application deployments.
+Integrating CI/CD pipelines with version control systems and testing frameworks
+helps to ensure the quality and reliability of your cloud applications. By
+running automated tests as part of the CI/CD process, development teams can
+quickly identify and fix any issues before the code is deployed to the
+production environment. This integration helps to improve the overall stability
+and performance of your cloud applications.
+Use configuration management tools
+Tools like Puppet, Chef, Ansible, and
+VM Manager
+help you to automate the configuration and management of cloud resources. Using
+these tools, you can ensure resource consistency and compliance across your
+cloud environments. This recommendation is relevant to the tooling
+focus area of operational readiness
+.
+Automating the configuration and management of cloud resources provides the
+following benefits:
+Significant reduction in the risk of manual errors
+: When manual
+processes are involved, there is a higher likelihood of mistakes due to
+human error. Configuration management tools reduce this risk by automating
+processes, so that configurations are applied consistently and accurately
+across all cloud resources. This automation can lead to improved reliability
+and stability of the cloud environment.
+Improvement in operational efficiency
+: By automating repetitive
+tasks, your organization can free up IT staff to focus on more strategic
+initiatives. This automation can lead to increased productivity and cost
+savings and improved responsiveness to changing business needs.
+Simplified management of complex cloud infrastructure
+: As cloud
+environments grow in size and complexity, managing the resources can become
+increasingly difficult. Configuration management tools provide a
+centralized platform for managing cloud resources. The tools make it easier
+to track configurations, identify issues, and implement changes. Using
+these tools can lead to improved visibility, control, and security of your
+cloud environment.
+Automate testing
+Integrating automated testing into your CI/CD pipelines helps to ensure the
+quality and reliability of your cloud applications. By validating changes before
+deployment, you can significantly reduce the risk of errors and regressions,
+which leads to a more stable and robust software system. This recommendation is
+relevant to these
+focus areas of operational readiness
+:
+processes and tooling.
+The following are the main benefits of incorporating automated testing into your
+CI/CD pipelines:
+Early detection of bugs and defects
+: Automated testing helps to
+detect bugs and defects early in the development process, before they can
+cause major problems in production. This capability saves time and
+resources by preventing the need for costly rework and bug fixes at later
+stages in the development process.
+High quality and standards-based code
+: Automated testing can help
+improve the overall quality of your code by ensuring that the code meets
+certain standards and best practices. This capability leads to more
+maintainable and reliable applications that are less prone to errors.
+You can use various types of testing techniques in CI/CD pipelines. Each test
+type serves a specific purpose.
+Unit testing
+focuses on testing individual units of code, such as
+functions or methods, to ensure that they work as expected.
+Integration testing
+tests the interactions between different
+components or modules of your application to verify that they work properly
+together.
+End-to-end testing
+is often used along with unit and integration
+testing. End-to-end testing simulates real-world scenarios to test the
+application as a whole, and helps to ensure that the application meets the
+requirements of your end users.
+To effectively integrate automated testing into your CI/CD pipelines, you must
+choose appropriate testing tools and frameworks. There are many different
+options, each with its own strengths and weaknesses. You must also establish a
+clear testing strategy that outlines the types of tests to be performed, the
+frequency of testing, and the criteria for passing or failing a test. By
+following these recommendations, you can ensure that your automated testing
+process is efficient and effective. Such a process provides valuable insights
+into the quality and reliability of your cloud applications.
+Previous
+arrow_back
+Manage and optimize cloud resources
+Next
+Continuously improve and innovate
+arrow_forward
+Send feedback
+Except as otherwise noted, the content of this page is licensed under the
+Creative Commons Attribution 4.0 License
+, and code samples are licensed under the
+Apache 2.0 License
+. For details, see the
+Google Developers Site Policies
+. Java is a registered trademark of Oracle and/or its affiliates.
+Last updated 2024-10-31 UTC.

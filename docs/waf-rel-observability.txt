@@ -1,0 +1,92 @@
+Detect potential failures by using observability  |  Cloud Architecture Center  |  Google Cloud Documentation
+Skip to main content
+Send feedback
+Detect potential failures by using observability
+Stay organized with collections
+Save and categorize content based on your preferences.
+Last reviewed 2024-12-30 UTC
+This principle in the reliability pillar of the
+Google Cloud Well-Architected Framework
+provides recommendations to help you proactively identify areas where errors and
+failures might occur.
+This principle is relevant to the
+observation
+focus area
+of reliability.
+Principle overview
+To maintain and improve the reliability of your workloads in
+Google Cloud, you need to implement effective observability by using
+metrics, logs, and traces.
+Metrics are numerical measurements of activities that you want to track
+for your application at specific time intervals. For example, you might
+want to track technical metrics like request rate and error rate, which can
+be used as service-level indicators (SLIs). You might also need to track
+application-specific business metrics like orders placed and payments received.
+Logs are time-stamped records of discrete events that occur within an
+application or system. The event could be a failure, an error, or a change
+in state. Logs might include metrics, and you can also use logs for SLIs.
+A trace represents the journey of a single user or transaction through a
+number of separate applications or the components of an application. For
+example, these components could be microservices. Traces help you to track
+what components were used in the journeys, where bottlenecks exist, and how
+long the journeys took.
+Metrics, logs, and traces help you monitor your system continuously.
+Comprehensive monitoring helps you find out where and why errors occurred. You
+can also detect potential failures before errors occur.
+Recommendations
+To detect potential failures efficiently, consider the recommendations in the
+following subsections.
+Gain comprehensive insights
+To track key metrics like response times and error rates, use
+Cloud Monitoring
+and
+Cloud Logging
+.
+These tools also help you to ensure that the metrics consistently meet the needs
+of your workload.
+To make data-driven decisions, analyze default service metrics to understand
+component dependencies and their impact on overall workload performance.
+To customize your monitoring strategy, create and publish your own metrics by
+using the Google Cloud SDK.
+Perform proactive troubleshooting
+Implement robust error handling and enable logging across all of the components
+of your workloads in Google Cloud. Activate logs like
+Cloud Storage access logs
+and
+VPC Flow Logs
+.
+When you configure logging, consider the associated
+costs
+.
+To control logging costs, you can configure
+exclusion filters
+on the log sinks to exclude certain logs from being stored.
+Optimize resource utilization
+Monitor CPU consumption, network I/O metrics, and disk I/O metrics to detect
+under-provisioned and over-provisioned resources in services like
+GKE, Compute Engine, and Dataproc. For a
+complete list of supported services, see
+Cloud Monitoring overview
+.
+Prioritize alerts
+For alerts, focus on critical metrics, set appropriate thresholds to minimize
+alert fatigue, and ensure timely responses to significant issues. This targeted
+approach lets you proactively maintain workload reliability. For more
+information, see
+Alerting overview
+.
+Previous
+arrow_back
+Take advantage of horizontal scalability
+Next
+Design for graceful degradation
+arrow_forward
+Send feedback
+Except as otherwise noted, the content of this page is licensed under the
+Creative Commons Attribution 4.0 License
+, and code samples are licensed under the
+Apache 2.0 License
+. For details, see the
+Google Developers Site Policies
+. Java is a registered trademark of Oracle and/or its affiliates.
+Last updated 2024-12-30 UTC.

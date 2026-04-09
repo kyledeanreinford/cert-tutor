@@ -1,0 +1,97 @@
+Well-Architected Framework: Performance optimization pillar  |  Cloud Architecture Center  |  Google Cloud Documentation
+Skip to main content
+Send feedback
+Well-Architected Framework: Performance optimization pillar
+Stay organized with collections
+Save and categorize content based on your preferences.
+Last reviewed 2024-12-06 UTC
+This pillar in the
+Google Cloud Well-Architected Framework
+provides recommendations to optimize the performance of workloads in
+Google Cloud.
+This document is intended for architects, developers, and administrators who
+plan, design, deploy, and manage workloads in Google Cloud.
+The recommendations in this pillar can help your organization to operate
+efficiently, improve customer satisfaction, increase revenue, and reduce cost.
+For example, when the backend processing time of an application decreases, users
+experience faster response times, which can lead to higher user retention and
+more revenue.
+The performance optimization process can involve a trade-off between
+performance and cost. However, optimizing performance can sometimes help you
+reduce costs. ​​For example, when the load increases, autoscaling can help to
+provide predictable performance by ensuring that the system resources aren't
+overloaded. Autoscaling also helps you to reduce costs by removing unused
+resources during periods of low load.
+Performance optimization is a continuous process, not a one-time activity. The
+following diagram shows the stages in the performance optimization process:
+The performance optimization process is an ongoing cycle that includes the
+following stages:
+Define requirements
+: Define granular performance requirements for
+each layer of the application stack before you design and develop your
+applications. To plan
+resource allocation, consider the key workload characteristics and performance
+expectations.
+Design and deploy
+: Use elastic and scalable design patterns that can
+help you meet your performance requirements.
+Monitor and analyze
+: Monitor performance continually by using logs,
+tracing, metrics, and alerts.
+Optimize
+: Consider potential redesigns as your applications evolve.
+Rightsize cloud resources and use new features to meet changing performance
+requirements.
+As shown in the preceding diagram, continue the cycle of monitoring,
+re-assessing requirements, and adjusting the cloud resources.
+For performance optimization principles and recommendations that are specific to AI and ML workloads, see
+AI and ML perspective: Performance optimization
+in the Well-Architected Framework.
+Core principles
+The recommendations in the performance optimization pillar of the Well-Architected Framework
+are mapped to the following core principles:
+Plan resource allocation
+Take advantage of elasticity
+Promote modular design
+Continuously monitor and improve performance
+Contributors
+Authors:
+Daniel Lees
+| Cloud Security Architect
+Gary Harmson
+| Principal Architect
+Luis Urena
+| Developer Relations Engineer
+Zach Seils
+| Networking Specialist
+Other contributors:
+Filipe Gracio, PhD
+| Customer Engineer, AI/ML Specialist
+Jose Andrade
+| Customer Engineer, SRE Specialist
+Kumar Dhanagopal
+| Cross-Product Solution Developer
+Marwan Al Shawi
+| Partner Customer Engineer
+Nicolas Pintaux
+| Customer Engineer, Application Modernization Specialist
+Ryan Cox
+| Principal Architect
+Radhika Kanakam
+| Program Lead, Google Cloud Well-Architected Framework
+Samantha He
+| Technical Writer
+Wade Holmes
+| Global Solutions Director
+Next
+Plan resource allocation
+arrow_forward
+Send feedback
+Except as otherwise noted, the content of this page is licensed under the
+Creative Commons Attribution 4.0 License
+, and code samples are licensed under the
+Apache 2.0 License
+. For details, see the
+Google Developers Site Policies
+. Java is a registered trademark of Oracle and/or its affiliates.
+Last updated 2024-12-06 UTC.

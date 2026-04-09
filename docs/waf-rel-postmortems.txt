@@ -1,0 +1,85 @@
+Conduct thorough postmortems  |  Cloud Architecture Center  |  Google Cloud Documentation
+Skip to main content
+Send feedback
+Conduct thorough postmortems
+Stay organized with collections
+Save and categorize content based on your preferences.
+Last reviewed 2024-12-30 UTC
+This principle in the reliability pillar of the
+Google Cloud Well-Architected Framework
+provides recommendations to help you conduct effective postmortems after
+failures and incidents.
+This principle is relevant to the
+learning
+focus area
+of reliability.
+Principle overview
+A postmortem is a written record of an incident, its impact, the actions taken
+to mitigate or resolve the incident, the root causes, and the follow-up actions
+to prevent the incident from recurring. The goal of a postmortem is to learn
+from mistakes and not assign blame.
+The following diagram shows the workflow of a postmortem:
+The workflow of a postmortem includes the following steps:
+Create postmortem
+Capture the facts
+Identify and analyze the root causes
+Plan for the future
+Execute the plan
+Conduct postmortem analyses after major events and non-major events like the
+following:
+User-visible downtimes or degradations beyond a certain threshold.
+Data losses of any kind.
+Interventions from on-call engineers, such as a release rollback or
+rerouting of traffic.
+Resolution times above a defined threshold.
+Monitoring failures, which usually imply manual incident discovery.
+Recommendations
+Define postmortem criteria before an incident occurs so that everyone knows
+when a post mortem is necessary.
+To conduct effective postmortems, consider the recommendations in the following
+subsections.
+Conduct blameless postmortems
+Effective postmortems focus on processes, tools, and technologies, and don't
+place blame on individuals or teams. The purpose of a postmortem analysis is to
+improve your technology and future, not to find who is guilty. Everyone makes
+mistakes. The goal should be to analyze the mistakes and learn from them.
+The following examples show the difference between feedback that assigns blame
+and blameless feedback:
+Feedback that assigns blame
+: "We need to rewrite the entire
+complicated backend system! It's been breaking weekly for the last three
+quarters and I'm sure we're all tired of fixing things piecemeal.
+Seriously, if I get paged one more time I'll rewrite it myself…"
+Blameless feedback
+: "An action item to rewrite the entire backend
+system might actually prevent these pages from continuing to happen. The
+maintenance manual for this version is quite long and really difficult to
+be fully trained up on. I'm sure our future on-call engineers will thank us!"
+Make the postmortem report readable by all the intended audiences
+For each piece of information that you plan to include in the report, assess
+whether that information is important and necessary to help the audience
+understand what happened. You can move supplementary data and explanations to an
+appendix of the report. Reviewers who need more information can request it.
+Avoid complex or over-engineered solutions
+Before you start to explore solutions for a problem, evaluate the importance of
+the problem and the likelihood of a recurrence. Adding complexity to the system
+to solve problems that are unlikely to occur again can lead to increased
+instability.
+Share the postmortem as widely as possible
+To ensure that issues don't remain unresolved, publish the outcome of the
+postmortem to a wide audience and get support from management. The value of a
+postmortem is proportional to the learning that occurs after the postmortem.
+When more people learn from incidents, the likelihood of similar failures
+recurring is reduced.
+Previous
+arrow_back
+Perform testing for recovery from data loss
+Send feedback
+Except as otherwise noted, the content of this page is licensed under the
+Creative Commons Attribution 4.0 License
+, and code samples are licensed under the
+Apache 2.0 License
+. For details, see the
+Google Developers Site Policies
+. Java is a registered trademark of Oracle and/or its affiliates.
+Last updated 2024-12-30 UTC.

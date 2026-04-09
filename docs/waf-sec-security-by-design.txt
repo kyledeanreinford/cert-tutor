@@ -1,0 +1,254 @@
+Implement security by design  |  Cloud Architecture Center  |  Google Cloud Documentation
+Skip to main content
+Send feedback
+Implement security by design
+Stay organized with collections
+Save and categorize content based on your preferences.
+Last reviewed 2025-02-05 UTC
+This principle in the security pillar of the
+Google Cloud Well-Architected Framework
+provides recommendations to incorporate robust security features, controls, and
+practices into the design of your cloud applications, services, and platforms.
+From ideation to operations, security is more effective when it's embedded as an
+integral part of every stage of your design process.
+Principle overview
+As explained in
+An Overview of Google's Commitment to Secure by Design
+,
+secure by default
+and
+secure by design
+are often used interchangeably, but
+they represent distinct approaches to building secure systems. Both approaches
+aim to minimize vulnerabilities and enhance security, but they differ in scope
+and implementation:
+Secure by default
+: focuses on ensuring that a system's default
+settings are set to a secure mode, minimizing the need for users or
+administrators to take actions to secure the system. This approach aims to
+provide a baseline level of security for all users.
+Secure by design
+: emphasizes proactively incorporating security
+considerations throughout a system's development lifecycle. This approach
+is about anticipating potential threats and vulnerabilities early and
+making design choices that mitigate risks. This approach involves using
+secure coding practices, conducting security reviews, and embedding
+security throughout the design process. The secure-by-design approach is an
+overarching philosophy that guides the development process and helps to ensure
+that security isn't an afterthought but is an integral part of a system's design.
+Recommendations
+To implement the secure by design principle for your cloud workloads, consider
+the recommendations in the following sections:
+Choose system components that help to secure your workloads
+Build a layered security approach
+Use hardened and attested infrastructure and services
+Encrypt data at rest and in transit
+Choose system components that help to secure your workloads
+This recommendation is relevant to all of the
+focus areas
+.
+A fundamental decision for effective security is the selection of robust system
+components—including both hardware and software components—that constitute
+your platform, solution, or service. To reduce the security attack surface and
+limit potential damage, you must also carefully consider the deployment patterns
+of these components and their configurations.
+In your application code, we recommend that you use straightforward, safe, and
+reliable libraries, abstractions, and application frameworks in order to eliminate
+classes of vulnerabilities. To scan for vulnerabilities in software libraries,
+you can use third-party tools. You can also use
+Assured Open Source Software
+,
+which helps to reduce risks to your software supply chain by using open source
+software (OSS) packages that Google uses and secures.
+Your infrastructure must use networking, storage, and compute options that
+support safe operation and align with your security requirements and risk
+acceptance levels. Infrastructure security is important for both internet-facing
+and internal workloads.
+For information about other Google solutions that support this recommendation,
+see
+Implement shift-left security
+.
+Build a layered security approach
+This recommendation is relevant to the following
+focus areas
+:
+AI and ML security
+Infrastructure security
+Identity and access management
+Data security
+We recommend that you implement security at each layer of your application and
+infrastructure stack by applying a defense-in-depth approach.
+Use the security features in each component of your platform. To limit access
+and identify the boundaries of the potential impact (that is, the
+blast radius
+)
+in the event of a security incident, do the following:
+Simplify your system's design to accommodate flexibility where possible.
+Document the security requirements of each component.
+Incorporate a robust secured mechanism to address resiliency and recovery
+requirements.
+When you design the security layers, perform a risk assessment to determine the
+security features that you need in order to meet internal security requirements
+and external regulatory requirements. We recommend that you use an
+industry-standard risk assessment framework that applies to cloud environments
+and that is relevant to your regulatory requirements. For example, the Cloud
+Security Alliance (CSA) provides the
+Cloud Controls Matrix (CCM)
+.
+Your risk assessment provides you with a catalog of risks and corresponding
+security controls to mitigate them.
+When you perform the risk assessment, remember that you have a shared
+responsibility arrangement with your cloud provider. Therefore, your risks in a
+cloud environment differ from your risks in an on-premises environment. For
+example, in an on-premises environment, you need to mitigate vulnerabilities to
+your hardware stack. In contrast, in a cloud environment, the cloud provider
+bears these risks. Also, remember that the boundaries of shared responsibilities
+differ between IaaS, PaaS, and SaaS services for each cloud provider.
+After you identify potential risks, you must design and create a mitigation
+plan that uses technical, administrative, and operational controls, as well as
+contractual protections and third-party attestations. In addition, a threat
+modeling method, such as the
+OWASP application threat modeling method
+,
+helps you to identify potential gaps and suggest actions to address the gaps.
+Use hardened and attested infrastructure and services
+This recommendation is relevant to all of the
+focus areas
+.
+A mature security program mitigates new vulnerabilities as described in
+security bulletins. The security program should also provide remediation to fix
+vulnerabilities in existing deployments and secure your VM and container
+images. You can use hardening guides that are specific to the OS and application
+of your images, as well as benchmarks like the one provided by the
+Center of Internet Security (CIS)
+.
+If you use custom images for your Compute Engine VMs, you need to patch the
+images yourself. Alternatively, you can use Google-provided
+curated OS images
+,
+which are patched regularly. To run containers on Compute Engine VMs, use
+Google-curated
+Container-optimized OS images
+.
+Google regularly patches and updates these images.
+If you use GKE, we recommend that you enable
+node auto-upgrades
+so that Google updates your cluster nodes with the latest patches. Google
+manages GKE control planes, which are automatically updated
+and patched. To further reduce the attack surface of your containers, you can
+use
+distroless images
+.
+Distroless images are ideal for security-sensitive applications, microservices,
+and situations where minimizing the image size and attack surface is
+paramount.
+For sensitive workloads, use
+Shielded VM
+,
+which prevents malicious code from being loaded during the VM boot cycle.
+Shielded VM instances provide boot security, monitor integrity, and use
+the
+Virtual Trusted Platform Module (vTPM)
+.
+To help secure SSH access,
+OS Login
+lets your employees connect to your VMs by using
+Identity and Access Management (IAM) permissions
+as the source of truth instead of relying on SSH keys. Therefore, you don't need
+to manage SSH keys throughout your organization. OS Login ties an
+administrator's access to their employee lifecycle, so when employees change
+roles or leave your organization, their access is revoked with their account. OS
+Login also supports
+Google two-factor authentication
+,
+which adds an extra layer of security against account takeover attacks.
+In GKE, application instances run within Docker
+containers. To enable a defined risk profile and to restrict employees from
+making changes to containers, ensure that your containers are stateless and
+immutable. The immutability principle means that your employees don't modify the
+container or access it interactively. If the container must be changed, you
+build a new image and redeploy that image. Enable SSH access to the underlying
+containers only in specific debugging scenarios.
+To help globally secure configurations across your environment, you can use
+organization policies
+to set constraints or guardrails on resources that affect the behavior of your
+cloud assets. For example, you can define the following organization policies
+and apply them either globally across a Google Cloud organization or
+selectively at the level of a folder or project:
+Disable external IP address allocation to VMs.
+Restrict resource creation to specific geographical locations.
+Disable the creation of Service Accounts or their keys.
+Encrypt data at rest and in transit
+This recommendation is relevant to the following
+focus areas
+:
+Infrastructure security
+Data security
+Data encryption is a foundational control to protect sensitive information, and
+it's a key part of
+data governance
+.
+An effective data protection strategy includes access control, data segmentation
+and geographical residency, auditing,
+and
+encryption implementation that's
+based on a careful assessment of requirements.
+By default, Google Cloud
+encrypts customer data that's stored at rest
+,
+with no action required from you. In addition to default encryption,
+Google Cloud provides options for envelope encryption and encryption key
+management. You must identify the solutions that best fit your requirements for
+key generation, storage, and rotation, whether you're choosing the keys for your
+storage, for compute, or for big data workloads. For example,
+Customer-managed encryption keys (CMEKs)
+can be created in
+Cloud Key Management Service (Cloud KMS)
+.
+The CMEKs can be either software-based or
+HSM-protected
+to meet your regulatory or compliance requirements, such as the need to rotate
+encryption keys regularly. Cloud KMS Autokey lets you automate the
+provisioning and assignment of CMEKs. In addition, you can bring your own keys
+that are sourced from a third-party key management system by using
+Cloud External Key Manager (Cloud EKM)
+.
+We strongly recommend that data be encrypted in-transit.
+Google encrypts and authenticates data in transit
+at one or more network layers when data moves outside physical boundaries that
+aren't controlled by Google or on behalf of Google. All VM-to-VM traffic within
+a VPC network and between peered VPC networks is encrypted. You can use
+MACsec
+for encryption of traffic over Cloud Interconnect connections. IPsec provides
+encryption for traffic over
+Cloud VPN
+connections. You can protect application-to-application traffic in the cloud by
+using security features like
+TLS and mTLS configurations in Apigee
+and
+Cloud Service Mesh
+for containerized applications.
+By default, Google Cloud encrypts data at rest and data in transit across
+the network. However, data isn't encrypted by default while it's in use in
+memory. If your organization handles confidential data, you need to mitigate any
+threats that undermine the confidentiality and integrity of either the
+application or the data in system memory. To mitigate these threats, you can use
+Confidential Computing, which provides a trusted execution environment for your
+compute workloads. For more information, see
+Confidential VM overview
+.
+Previous
+arrow_back
+Overview
+Next
+Implement zero trust
+arrow_forward
+Send feedback
+Except as otherwise noted, the content of this page is licensed under the
+Creative Commons Attribution 4.0 License
+, and code samples are licensed under the
+Apache 2.0 License
+. For details, see the
+Google Developers Site Policies
+. Java is a registered trademark of Oracle and/or its affiliates.
+Last updated 2025-02-05 UTC.

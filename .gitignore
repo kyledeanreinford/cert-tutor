@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.idea/
+.claude/
+data/chroma/
+data/session.json
+data/indexed.json
+data/questions.json
