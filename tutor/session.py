@@ -15,7 +15,7 @@ class Session:
         self.domains: dict[str, dict[str, int]] = {}
         self.topics: dict[str, dict[str, int]] = {}
         self.history: list[dict[str, Any]] = []
-        self.asked_seed_ids: list[int] = []
+        self.asked_seed_ids: list[str] = []
         self.retry_queue: list[dict[str, Any]] = []
         self.products: dict[str, dict[str, int]] = {}
         self.session_runs: list[dict[str, Any]] = []

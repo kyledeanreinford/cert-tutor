@@ -144,14 +144,14 @@ class TestSessionSaveLoad(unittest.TestCase):
             domain="D", topic="T", explanation="",
             products=["Spanner"],
         )
-        session.asked_seed_ids = [1, 5, 10]
+        session.asked_seed_ids = ["official-01", "community-05", "community-10"]
         session.save()
 
         loaded = Session.load(self.history_file)
         self.assertEqual(loaded.total_questions, 1)
         self.assertEqual(loaded.total_correct, 1)
         self.assertEqual(loaded.domains, {"D": {"asked": 1, "correct": 1}})
-        self.assertEqual(loaded.asked_seed_ids, [1, 5, 10])
+        self.assertEqual(loaded.asked_seed_ids, ["official-01", "community-05", "community-10"])
         self.assertEqual(loaded.products, {"Spanner": {"asked": 1, "correct": 1}})
         self.assertEqual(len(loaded.history), 1)
 

@@ -1,16 +1,5 @@
-openai:
-  generation_model: "gpt-5.4"
-  explanation_model: "gpt-5.4-mini"
-  embed_model: "text-embedding-3-small"
-
-rag:
-  chunk_size: 800
-  chunk_overlap: 100
-  top_k: 4
-
 session:
   data_dir: "data"
-  chroma_dir: "data/chroma"
   history_file: "data/session.json"
 
 tutor:

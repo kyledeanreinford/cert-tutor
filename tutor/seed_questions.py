@@ -2,7 +2,35 @@ import json
 import random
 from pathlib import Path
 
-SEED_FILE = Path(__file__).parent.parent / "sample_questions.json"
+SEED_FILE = Path(__file__).parent.parent / "cca_question_bank.json"
+
+DOMAIN_NAMES: dict[str, str] = {
+    "d1": "Agentic Architecture & Orchestration",
+    "d2": "Tool Design & MCP Integration",
+    "d3": "Claude Code Configuration & Workflows",
+    "d4": "Prompt Engineering & Structured Output",
+    "d5": "Context Management & Reliability",
+}
+
+
+def _normalize(q: dict) -> dict:
+    """Normalize cca_question_bank.json format to the internal question format."""
+    domain_id = q.get("domain", "")
+    key_concept = q.get("key_concept", "")
+    return {
+        "id": q["id"],
+        "cert": "architect",
+        "domain": DOMAIN_NAMES.get(domain_id, domain_id),
+        "topic": q.get("task_statement", ""),
+        "question": q["question"],
+        "choices": q.get("options", q.get("choices", {})),
+        "correct": q.get("correct_answer", q.get("correct", "")),
+        "explanation": q.get("explanation", ""),
+        "products": [key_concept] if key_concept else q.get("anti_patterns", []),
+        "multi_select": q.get("multi_select", False),
+        "scenario": q.get("scenario"),
+        "source": q.get("source"),
+    }
 
 
 def load_seed_questions(cert: str = "architect") -> list[dict]:
@@ -10,11 +38,12 @@ def load_seed_questions(cert: str = "architect") -> list[dict]:
         return []
     data = json.loads(SEED_FILE.read_text())
     questions = data.get("questions", [])
-    return [q for q in questions if q.get("cert", "architect") == cert]
+    normalized = [_normalize(q) for q in questions]
+    return [q for q in normalized if q.get("cert", "architect") == cert]
 
 
 def get_unasked_seed(
-    asked_ids: list[int], weak_domains: set[str] | None = None, cert: str = "architect"
+    asked_ids: list[str], weak_domains: set[str] | None = None, cert: str = "architect"
 ) -> dict | None:
     questions = load_seed_questions(cert)
     unasked = [q for q in questions if q["id"] not in asked_ids]
