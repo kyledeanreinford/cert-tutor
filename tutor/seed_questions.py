@@ -13,6 +13,37 @@ DOMAIN_NAMES: dict[str, str] = {
 }
 
 
+def _shuffle_choices(q: dict) -> dict:
+    """Randomly remap A/B/C/D, updating the correct answer letter to match."""
+    choices = q["choices"]
+    correct = q["correct"]
+
+    if isinstance(correct, list):
+        correct_texts = {choices[c] for c in correct if c in choices}
+        items = list(choices.items())
+        random.shuffle(items)
+        new_choices = {}
+        new_correct = []
+        for new_letter, (_, text) in zip("ABCD", items):
+            new_choices[new_letter] = text
+            if text in correct_texts:
+                new_correct.append(new_letter)
+        q["choices"] = new_choices
+        q["correct"] = sorted(new_correct)
+    else:
+        correct_text = choices.get(correct, "")
+        items = list(choices.items())
+        random.shuffle(items)
+        new_choices = {}
+        for new_letter, (_, text) in zip("ABCD", items):
+            new_choices[new_letter] = text
+            if text == correct_text:
+                q["correct"] = new_letter
+        q["choices"] = new_choices
+
+    return q
+
+
 def _normalize(q: dict) -> dict:
     """Normalize cca_question_bank.json format to the internal question format."""
     domain_id = q.get("domain", "")
@@ -53,9 +84,9 @@ def get_unasked_seed(
     if weak_domains:
         weak_matches = [q for q in unasked if q.get("domain") in weak_domains]
         if weak_matches:
-            return random.choice(weak_matches)
+            return _shuffle_choices(random.choice(weak_matches))
 
-    return random.choice(unasked)
+    return _shuffle_choices(random.choice(unasked))
 
 
 def get_style_examples(count: int = 2, cert: str = "architect") -> list[dict]:
