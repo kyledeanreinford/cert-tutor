@@ -22,8 +22,6 @@ DOMAIN_WEIGHTS = {
     "Context Management & Reliability": 0.15,
 }
 
-LEVEL_LABELS = {1: "Beginner", 2: "Intermediate", 3: "Expert"}
-
 PASS_THRESHOLD = 0.72
 _PRIOR = 0.50
 _DOMAIN_MIN = 5
@@ -38,12 +36,21 @@ DOMAIN_SHORT = {
 }
 
 
+REPO_ROOT = Path(__file__).parent.parent
+
+
 def load_config() -> dict:
-    config_path = Path("config.yaml")
+    config_path = REPO_ROOT / "config.yaml"
     if not config_path.exists():
-        console.print("[red]config.yaml not found. Run from the project root.[/red]")
+        console.print(f"[red]config.yaml not found at {config_path}.[/red]")
         sys.exit(1)
-    return yaml.safe_load(config_path.read_text())
+    config = yaml.safe_load(config_path.read_text())
+
+    # Anchor storage paths to the repo root so the tool works from any cwd.
+    history_file = Path(config["session"]["history_file"])
+    if not history_file.is_absolute():
+        config["session"]["history_file"] = str(REPO_ROOT / history_file)
+    return config
 
 
 def _rate_color(rate: float) -> str:
@@ -90,10 +97,8 @@ def build_header(session: Session) -> Panel:
         pc = "green" if pct >= 60 else "yellow" if pct >= 35 else "red"
         pass_label = f"[{pc}]~{pct}% pass[/{pc}]"
 
-    level_label = LEVEL_LABELS.get(session.current_level, "?")
     parts = [
         pass_label,
-        f"Level {session.current_level} ({level_label})",
         f"[{color}]{stats['total_correct']}/{stats['total_questions']} ({rate:.0f}%)[/{color}]",
     ]
 
@@ -103,17 +108,13 @@ def build_header(session: Session) -> Panel:
         short = DOMAIN_SHORT.get(domain, domain)
         parts.append(f"{short}: [{dc}]{data['correct']}/{data['asked']}[/{dc}]")
 
-    return Panel(" | ".join(parts), title="cert-tutor", border_style="green", height=3)
+    return Panel(" | ".join(parts), title="cert-tutor", border_style="green")
 
 
 def display_question(data: dict) -> None:
     domain = data.get("domain", "")
     topic = data.get("topic", "")
     title = f"{domain} / {topic}" if domain and topic else domain or topic
-    if data.get("multi_select"):
-        correct = data["correct"]
-        n = len(correct) if isinstance(correct, list) else 2
-        title += f" [yellow](Choose {n})[/yellow]"
 
     question_text = f"[bold]{data['question']}[/bold]\n"
     for letter, choice in data["choices"].items():
@@ -121,24 +122,19 @@ def display_question(data: dict) -> None:
     console.print(Panel(question_text, title=title, border_style="blue"))
 
 
-def display_answers_with_result(
-    data: dict, user_answer: str | list[str], correct: str | list[str]
-) -> None:
-    correct_set = set(correct) if isinstance(correct, list) else {correct}
-    user_set = set(user_answer) if isinstance(user_answer, list) else {user_answer}
-
+def display_answers_with_result(data: dict, user_answer: str, correct: str) -> None:
     lines = []
     for letter, choice in data["choices"].items():
-        if letter in correct_set and letter in user_set:
+        if letter == correct and letter == user_answer:
             lines.append(f"  [green]+  {letter}) {choice}[/green]")
-        elif letter in correct_set:
+        elif letter == correct:
             lines.append(f"  [yellow]+  {letter}) {choice}[/yellow]")
-        elif letter in user_set:
+        elif letter == user_answer:
             lines.append(f"  [red]x  {letter}) {choice}[/red]")
         else:
             lines.append(f"  [dim]   {letter}) {choice}[/dim]")
 
-    is_correct = user_set == correct_set
+    is_correct = user_answer == correct
     title = "[green]Correct[/green]" if is_correct else "[red]Incorrect[/red]"
     border = "green" if is_correct else "red"
     console.print(Panel("\n\n".join(lines), title=title, border_style=border))
@@ -149,32 +145,21 @@ def _prompt_input(prompt_text: str) -> str:
     return pt_prompt(prompt_text)
 
 
-def get_answer(choose_n: int = 1) -> str | list[str]:
-    if choose_n > 1:
-        while True:
-            raw = _prompt_input(f"Choose {choose_n} (e.g. AC) or Q: ").strip().upper()
-            if raw == "Q":
-                return "Q"
-            letters = sorted(set(raw))
-            if len(letters) == choose_n and all(l in "ABCDE" for l in letters):
-                return letters
-            console.print(f"[yellow]Enter exactly {choose_n} letters (A-E) or Q.[/yellow]")
-    else:
-        while True:
-            answer = _prompt_input("Answer (A/B/C/D/Q): ").strip().upper()
-            if answer in ("A", "B", "C", "D", "Q"):
-                return answer
-            console.print("[yellow]Enter A, B, C, D, or Q.[/yellow]")
+def get_answer() -> str:
+    while True:
+        answer = _prompt_input("Answer (A/B/C/D/Q): ").strip().upper()
+        if answer in ("A", "B", "C", "D", "Q"):
+            return answer
+        console.print("[yellow]Enter A, B, C, D, or Q.[/yellow]")
 
 
 def show_stats(session: Session, threshold: float, recent_n: int = 0) -> None:
     stats = session.summary()
     rate = stats["rate"]
     color = "green" if rate >= 70 else "yellow" if rate >= 50 else "red"
-    level_label = LEVEL_LABELS.get(session.current_level, "?")
     console.print(Panel(
-        f"[bold]Level {session.current_level} ({level_label}) | "
-        f"Overall: {stats['total_correct']}/{stats['total_questions']} ([{color}]{rate:.1f}%[/{color}])[/bold]",
+        f"[bold]Overall: {stats['total_correct']}/{stats['total_questions']} "
+        f"([{color}]{rate:.1f}%[/{color}])[/bold]",
         title="Performance Summary",
     ))
 
@@ -214,21 +199,6 @@ def show_stats(session: Session, threshold: float, recent_n: int = 0) -> None:
             )
         console.print(topic_table)
 
-    weak_prods = session.weak_products(threshold)
-    if weak_prods:
-        prod_table = Table(title="Weak Concepts")
-        prod_table.add_column("Concept", style="bold")
-        prod_table.add_column("Asked", justify="right")
-        prod_table.add_column("Rate", justify="right")
-
-        for product, rate, asked in weak_prods:
-            prod_table.add_row(
-                product,
-                str(asked),
-                f"[red]{rate * 100:.0f}%[/red]",
-            )
-        console.print(prod_table)
-
     retry_count = session.retry_queue_size()
     if retry_count > 0:
         console.print(f"\n[yellow]Retry queue:[/yellow] {retry_count} missed questions waiting")
@@ -250,6 +220,23 @@ def show_stats(session: Session, threshold: float, recent_n: int = 0) -> None:
             )
         console.print(run_table)
 
+    if session.exam_runs:
+        exam_table = Table(title="Recent Exams")
+        exam_table.add_column("Date", style="bold")
+        exam_table.add_column("Score", justify="right")
+        exam_table.add_column("Rate", justify="right")
+
+        for run in session.exam_runs[-5:]:
+            ended = run["ended"][:10]
+            exam_rate = (run["score"] / run["total"] * 100) if run["total"] > 0 else 0
+            exam_color = "green" if exam_rate >= 70 else "yellow" if exam_rate >= 50 else "red"
+            exam_table.add_row(
+                ended,
+                f"{run['score']}/{run['total']}",
+                f"[{exam_color}]{exam_rate:.0f}%[/{exam_color}]",
+            )
+        console.print(exam_table)
+
 
 def cmd_study(config: dict) -> None:
     threshold = config["tutor"]["weak_spot_threshold"]
@@ -260,13 +247,8 @@ def cmd_study(config: dict) -> None:
     has_seeds = get_unasked_seed(session.asked_seed_ids) is not None
     has_retries = session.retry_queue_size() > 0
     if not has_seeds and not has_retries:
-        console.print("[red]No questions available. Add questions to cca_question_bank.json.[/red]")
+        console.print("[red]No questions available. Add questions to claude_certified_architect_question_bank.json.[/red]")
         sys.exit(1)
-
-    diff_config = config["tutor"].get("difficulty", {})
-    promote_threshold = diff_config.get("promote_threshold", 0.8)
-    demote_threshold = diff_config.get("demote_threshold", 0.4)
-    window_size = diff_config.get("window_size", 10)
 
     session.start_run()
     console.clear()
@@ -277,9 +259,9 @@ def cmd_study(config: dict) -> None:
         is_seed = False
         is_retry = False
 
-        weak_domains = set(session.weak_spots(threshold, recent_n))
+        weak_domains = set(session.weak_domains(threshold, recent_n))
 
-        if session.retry_queue_size() > 0 and random.random() < 0.4:
+        if session.eligible_retry_count() > 0 and random.random() < 0.4:
             question_data = session.get_retry_question(weak_domains)
             is_retry = True
 
@@ -307,8 +289,7 @@ def cmd_study(config: dict) -> None:
         display_question(question_data)
 
         correct = question_data["correct"]
-        choose_n = len(correct) if isinstance(correct, list) else 1
-        answer = get_answer(choose_n)
+        answer = get_answer()
 
         if answer == "Q":
             session.end_run()
@@ -316,10 +297,7 @@ def cmd_study(config: dict) -> None:
             console.print("\n[bold]Session saved.[/bold]")
             break
 
-        if isinstance(correct, list):
-            is_correct = set(answer) == set(correct)
-        else:
-            is_correct = answer == correct
+        is_correct = answer == correct
 
         if is_seed:
             session.asked_seed_ids.append(question_data["id"])
@@ -328,7 +306,6 @@ def cmd_study(config: dict) -> None:
             session.add_to_retry_queue(question_data)
 
         explanation = question_data.get("explanation", "")
-        question_difficulty = question_data.get("difficulty", 2)
 
         session.record(
             question=question_data["question"],
@@ -338,19 +315,7 @@ def cmd_study(config: dict) -> None:
             domain=question_data.get("domain", ""),
             topic=question_data.get("topic", ""),
             explanation=explanation,
-            products=question_data.get("products"),
-            difficulty=question_difficulty,
         )
-
-        new_level = session.check_level_change(promote_threshold, demote_threshold, window_size)
-        if new_level is not None:
-            old_label = LEVEL_LABELS.get(session.current_level, "?")
-            new_label = LEVEL_LABELS.get(new_level, "?")
-            if new_level > session.current_level:
-                console.print(f"\n[bold green]Level up! {old_label} -> {new_label}[/bold green]")
-            else:
-                console.print(f"\n[bold yellow]Level adjusted: {old_label} -> {new_label}[/bold yellow]")
-            session.set_level(new_level)
 
         session.save()
 
@@ -360,8 +325,18 @@ def cmd_study(config: dict) -> None:
         display_answers_with_result(question_data, answer, correct)
 
         if explanation:
-            spaced = re.sub(r'\n([A-E]\))', r'\n\n\1', explanation)
+            spaced = re.sub(
+                r'\.\s+(?=Option [A-E]\b|The correct answer is [A-E]\b|Correct answer [A-E]\b)',
+                '.\n\n',
+                explanation.strip(),
+            )
+            spaced = re.sub(r'\n([A-E]\))', r'\n\n\1', spaced)
             console.print(Panel(spaced, title="Explanation", border_style="dim"))
+
+        if not is_correct:
+            ref_lines = _format_references(config, domain=question_data.get("domain"))
+            if ref_lines:
+                console.print(Panel(ref_lines, title="Further reading", border_style="dim"))
 
         console.print()
 
@@ -381,29 +356,12 @@ def cmd_exam(config: dict) -> None:
     exam_size = 60
     time_limit = 120 * 60
 
-    case_study_pool = [q for q in available if q.get("case_study")]
-    non_case_pool = [q for q in available if not q.get("case_study")]
-
     exam_questions: list[dict] = []
     used_ids: set[str] = set()
 
-    if case_study_pool:
-        case_names = list(set(q["case_study"] for q in case_study_pool))
-        chosen_cases = random.sample(case_names, min(2, len(case_names)))
-        for case_name in chosen_cases:
-            case_qs = [q for q in case_study_pool if q["case_study"] == case_name]
-            random.shuffle(case_qs)
-            exam_questions.extend(case_qs[:8])
-            used_ids.update(q["id"] for q in case_qs[:8])
-    else:
-        chosen_cases = []
-
-    remaining_needed = exam_size - len(exam_questions)
-    remaining_pool = [q for q in non_case_pool if q["id"] not in used_ids]
-
     for domain, weight in DOMAIN_WEIGHTS.items():
-        target = round(remaining_needed * weight)
-        domain_qs = [q for q in remaining_pool if q.get("domain") == domain and q["id"] not in used_ids]
+        target = round(exam_size * weight)
+        domain_qs = [q for q in available if q.get("domain") == domain and q["id"] not in used_ids]
         random.shuffle(domain_qs)
         picked = domain_qs[:target]
         exam_questions.extend(picked)
@@ -419,11 +377,9 @@ def cmd_exam(config: dict) -> None:
 
     random.shuffle(exam_questions)
 
-    case_list = ", ".join(chosen_cases) if chosen_cases else "None"
     console.clear()
     console.print(Panel(
         f"[bold]Mock Exam: {len(exam_questions)} questions, {time_limit // 60} minutes[/bold]\n\n"
-        f"Case studies: {case_list}\n"
         "No explanations until the end. Type Q to finish early.",
         title="cert-tutor exam",
         border_style="yellow",
@@ -446,9 +402,9 @@ def cmd_exam(config: dict) -> None:
             _sys.stdout.flush()
             time.sleep(1)
 
-    exam_answers: list[str | list[str] | None] = [None] * len(exam_questions)
+    exam_answers: list[str | None] = [None] * len(exam_questions)
 
-    def _ask_exam_question(idx: int) -> str | list[str] | None:
+    def _ask_exam_question(idx: int) -> str | None:
         nonlocal timer_stop
         question_data = exam_questions[idx]
 
@@ -459,8 +415,6 @@ def cmd_exam(config: dict) -> None:
         console.print()
         console.print()
         display_question(question_data)
-        correct = question_data["correct"]
-        choose_n = len(correct) if isinstance(correct, list) else 1
 
         timer_stop = False
         timer_thread = threading.Thread(
@@ -469,24 +423,12 @@ def cmd_exam(config: dict) -> None:
         timer_thread.start()
 
         answer = None
-        if choose_n > 1:
-            while True:
-                raw = _prompt_input(f"Choose {choose_n} (e.g. AC), S=skip, Q=finish: ").strip().upper()
-                if raw in ("Q", "S"):
-                    answer = raw
-                    break
-                letters = sorted(set(raw))
-                if len(letters) == choose_n and all(l in "ABCDE" for l in letters):
-                    answer = letters
-                    break
-                console.print(f"[yellow]Enter exactly {choose_n} letters (A-E), S, or Q.[/yellow]")
-        else:
-            while True:
-                raw = _prompt_input("Answer (A/B/C/D/S/Q): ").strip().upper()
-                if raw in ("A", "B", "C", "D", "S", "Q"):
-                    answer = raw
-                    break
-                console.print("[yellow]Enter A, B, C, D, S to skip, or Q to finish.[/yellow]")
+        while True:
+            raw = _prompt_input("Answer (A/B/C/D/S/Q): ").strip().upper()
+            if raw in ("A", "B", "C", "D", "S", "Q"):
+                answer = raw
+                break
+            console.print("[yellow]Enter A, B, C, D, S to skip, or Q to finish.[/yellow]")
 
         timer_stop = True
         timer_thread.join(timeout=2)
@@ -531,10 +473,7 @@ def cmd_exam(config: dict) -> None:
             continue
         q = exam_questions[i]
         correct = q["correct"]
-        if isinstance(correct, list):
-            is_correct = set(exam_answer) == set(correct)
-        else:
-            is_correct = exam_answer == correct
+        is_correct = exam_answer == correct
         answers.append({"question_data": q, "answer": exam_answer, "correct": correct, "is_correct": is_correct})
 
     unanswered = sum(1 for a in exam_answers if a is None)
@@ -590,20 +529,15 @@ def cmd_exam(config: dict) -> None:
             console.print(f"  {q['explanation'][:200]}")
         console.print()
 
+    session.record_exam_run(
+        score=correct_count,
+        total=len(exam_questions),
+        elapsed_seconds=elapsed,
+        per_domain=domain_results,
+    )
     for a in answers:
-        q = a["question_data"]
-        session.record(
-            question=q["question"],
-            choices=q["choices"],
-            user_answer=a["answer"],
-            correct_answer=a["correct"],
-            domain=q.get("domain", ""),
-            topic=q.get("topic", ""),
-            explanation=q.get("explanation", ""),
-            products=q.get("products"),
-        )
         if not a["is_correct"]:
-            session.add_to_retry_queue(q)
+            session.add_to_retry_queue(a["question_data"])
     session.save()
 
 
@@ -615,24 +549,98 @@ def cmd_stats(config: dict) -> None:
     show_stats(session, config["tutor"]["weak_spot_threshold"], config["tutor"].get("recent_n", 0))
 
 
+REFERENCE_LABELS = {
+    "exam_guide": "Exam guide",
+    "action": "Partner: Claude Code (action)",
+    "api": "Partner: Claude API",
+    "mcp": "Partner: MCP",
+    "skills": "Partner: Skills",
+}
+
+DOMAIN_REFS = {
+    "Agentic Architecture & Orchestration":  ["api", "action"],
+    "Tool Design & MCP Integration":         ["mcp", "api"],
+    "Claude Code Configuration & Workflows": ["action", "skills"],
+    "Prompt Engineering & Structured Output": ["api"],
+    "Context Management & Reliability":      ["api", "action"],
+}
+
+
+def _resolve_ref(value: str) -> str:
+    if value.startswith(("http://", "https://", "file://")):
+        return value
+    p = Path(value)
+    if not p.is_absolute():
+        p = (Path(__file__).parent.parent / p).resolve()
+    return str(p)
+
+
+def _format_references(config: dict, domain: str | None = None) -> str:
+    refs = config.get("references", {}) or {}
+    if domain and domain in DOMAIN_REFS:
+        keys = ["exam_guide", *DOMAIN_REFS[domain]]
+    else:
+        keys = list(REFERENCE_LABELS.keys())
+    lines = []
+    for key in keys:
+        url = (refs.get(key) or "").strip()
+        if url:
+            label = REFERENCE_LABELS.get(key, key)
+            lines.append(f"  [bold]{label}:[/bold] {_resolve_ref(url)}")
+    return "\n".join(lines)
+
+
+def cmd_refs(config: dict) -> None:
+    body = _format_references(config)
+    if not body:
+        console.print(
+            "[yellow]No reference URLs configured. "
+            "Add them under [bold]references:[/bold] in config.yaml.[/yellow]"
+        )
+        return
+    console.print(Panel(body, title="References", border_style="cyan"))
+
+
+def _reset_session(config: dict) -> None:
+    history_file = Path(config["session"]["history_file"])
+    if not history_file.exists():
+        console.print("[dim]No session to reset.[/dim]")
+        return
+    confirm = _prompt_input("This will erase all study history. Type 'yes' to confirm: ").strip().lower()
+    if confirm != "yes":
+        console.print("[yellow]Reset cancelled.[/yellow]")
+        sys.exit(0)
+    history_file.unlink()
+    console.print("[green]Session cleared.[/green]")
+
+
 def main(args: list[str]) -> None:
     config = load_config()
 
     if not args:
-        console.print("[bold]Usage:[/bold] uv run -m tutor [study|exam|stats]")
-        console.print("  study    Start a study session")
-        console.print("  exam     Take a timed 60-question mock exam")
-        console.print("  stats    Show performance summary")
+        console.print("[bold]Usage:[/bold] uv run -m tutor [study|exam|stats|refs|reset] [--reset]")
+        console.print("  study             Start a study session ([dim]--reset[/dim] clears history first)")
+        console.print("  exam              Take a timed 60-question mock exam")
+        console.print("  stats             Show performance summary")
+        console.print("  refs              Show reference links (exam guide, learning path)")
+        console.print("  reset             Erase all study history")
         sys.exit(0)
 
     command = args[0]
+    flags = set(args[1:])
 
     if command == "study":
+        if "--reset" in flags:
+            _reset_session(config)
         cmd_study(config)
     elif command == "exam":
         cmd_exam(config)
     elif command == "stats":
         cmd_stats(config)
+    elif command == "refs":
+        cmd_refs(config)
+    elif command == "reset":
+        _reset_session(config)
     else:
         console.print(f"[red]Unknown command: {command}[/red]")
         sys.exit(1)

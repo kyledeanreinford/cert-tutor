@@ -1,14 +1,24 @@
 # cert-tutor
 
-Interactive CLI study tutor for technical certifications. Uses OpenAI + RAG over your PDFs to generate exam-style questions, track weak spots, and explain answers.
+Offline CLI study tool for the **Claude Certified Architect — Foundations (CCA-F)** exam. Drills you on a 211-question
+bank, tracks weak domains, and runs a timed mock exam.
 
-Includes 350 pre-built questions for the Google Cloud Professional Cloud Architect exam, weighted to match the official exam guide.
+Question bank lives in `claud_certified_architect_question_bank.json` and covers all five exam domains:
+
+| Domain                                 | Weight | Questions |
+|----------------------------------------|--------|-----------|
+| Agentic Architecture & Orchestration   | 27%    | 58        |
+| Tool Design & MCP Integration          | 18%    | 35        |
+| Claude Code Configuration & Workflows  | 20%    | 42        |
+| Prompt Engineering & Structured Output | 20%    | 42        |
+| Context Management & Reliability       | 15%    | 34        |
+
+The bank combines 27 questions from the official exam guide and community sources (`official-*`, `community-*`) with 184 generated questions (`gen-*`).
 
 ## Prerequisites
 
 - Python 3.14+
 - [uv](https://docs.astral.sh/uv/)
-- An OpenAI API key
 
 ## Setup
 
@@ -16,59 +26,65 @@ Includes 350 pre-built questions for the Google Cloud Professional Cloud Archite
 git clone <repo>
 cd cert-tutor
 uv sync
-
-# Add your API key
-cp .env.example .env
-# Edit .env with your actual key
-source .env
 ```
+
+No API keys, no network calls — everything runs from the local question bank.
 
 ## Usage
 
 ```bash
-# Download study resources for an exam
-uv run -m tutor fetch architect
-
-# Index all docs (PDFs and fetched text files)
-uv run -m tutor ingest
-
-# Start studying (adaptive, targets your weak spots)
+# Adaptive study session — pulls from the bank and revisits missed questions
 uv run -m tutor study
 
-# Take a timed 60-question mock exam
+# Timed 60-question mock exam (120 minutes, pass at 70%)
 uv run -m tutor exam
 
-# Check your performance breakdown
+# Performance breakdown
 uv run -m tutor stats
 ```
 
 ## Commands
 
-**fetch** — Downloads official study resources for a certification exam. Currently supports `architect` (Google Cloud Professional Cloud Architect). Fetches Well-Architected Framework pages, Architecture Center guides, and product best practices.
+**study** — Picks unasked questions from the bank, weighted toward your weak domains. Missed questions go into a retry
+queue and resurface after a 5-question cooldown. The header shows a running pass-probability estimate based on
+per-domain accuracy. Type `Q` at any answer prompt to save and quit.
 
-**ingest** — Parses PDFs and text files from `docs/`, chunks the text, generates embeddings, and stores them in a local ChromaDB vector store. Use `--reset` to clear and re-index everything.
+**exam** — Simulates the real exam: 60 questions sampled by domain weight, 120-minute timer, no explanations until the
+end. `S` skips a question (returned to at the end), `Q` finishes early. Final screen shows pass/fail, per-domain
+breakdown, and a review of every missed question.
 
-**study** — Adaptive study mode. Generates exam-style questions from your indexed docs and 350 seed questions. Tracks your performance by exam section. Aggressively retargets your weak domains and missed questions. Type your reasoning before answering to get personalized feedback. Use `/case` to view case study context.
+**stats** — Overall score, per-domain and per-topic accuracy, weak-concept table, retry-queue size, and recent session
+history.
 
-**exam** — Simulates the real exam: 60 questions, 120-minute countdown timer, 2 case studies with 7-8 questions each. Skip questions with S and review them at the end. No explanations until you finish. Pass/fail at 70% with per-section breakdown.
+**refs** — Prints the configured reference URLs (exam guide, partner-network learning path). Same links also surface
+under each missed-question explanation in `study`. Configure them in `config.yaml` under `references:`.
 
-**stats** — Shows overall score, per-section and per-topic breakdown, weak products, and recent session history.
+**reset** — Erases all study history. `study --reset` does the same and then immediately starts a fresh session.
 
 ## Configuration
 
-Edit `config.yaml` to change models, chunk sizes, or the weak spot threshold:
+`config.yaml`:
 
 ```yaml
-openai:
-  generation_model: "gpt-5.4"
-  explanation_model: "gpt-5.4-mini"
-  embed_model: "text-embedding-3-small"
-
-rag:
-  chunk_size: 800
-  chunk_overlap: 100
-  top_k: 4
+session:
+  data_dir: "data"
+  history_file: "data/session.json"
 
 tutor:
-  weak_spot_threshold: 0.5
+  weak_spot_threshold: 0.5  # topics below this rate count as weak
+  recent_n: 30              # only the last N answers count toward weak-spot detection
+
+references:
+  exam_guide: "EXAM_GUIDE.pdf"   # bundled in the repo (publicly available on Anthropic's CCA page)
+  action: "https://drive.google.com/..."   # Partner Network: Claude Code
+  api:    "https://drive.google.com/..."   # Partner Network: Claude API
+  mcp:    "https://drive.google.com/..."   # Partner Network: MCP
+  skills: "https://drive.google.com/..."   # Partner Network: Skills
 ```
+
+Session state (history, retry queue, run log) persists in `data/session.json`.
+
+`EXAM_GUIDE.pdf` ships with the repo. The four Partner Network category links are intentionally external — those
+materials aren't redistributed here. Each missed question only surfaces the categories relevant to its domain (e.g.
+an MCP question shows the `mcp` and `api` links plus the exam guide), keeping the panel small. Run `tutor refs` to
+see the full list.

@@ -5,8 +5,10 @@ session:
 tutor:
   weak_spot_threshold: 0.5
   recent_n: 30
-  difficulty:
-    default_level: 1
-    promote_threshold: 0.8
-    demote_threshold: 0.4
-    window_size: 10
+
+references:
+  exam_guide: "EXAM_GUIDE.pdf"   # Bundled with the repo (publicly available on Anthropic's CCA page)
+  action: "https://drive.google.com/drive/folders/17vm0mvgszfKWcr-PAzNm9a1VaNooWnFd"
+  api: "https://drive.google.com/drive/folders/1jLQtPg32TKq_FF0MIt5TVf2nyf67bjP3"
+  mcp: "https://drive.google.com/drive/folders/1aoobOxFrSLP8Qa1_tR5fA-ZHMDDzsIVo"
+  skills: "https://drive.google.com/drive/folders/1Dyy7wkQovE6uTl71LGBghEsmcChUiQ5P"

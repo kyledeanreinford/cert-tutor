@@ -5,4 +5,3 @@ __pycache__/
 .idea/
 .claude/
 data/session.json
-data/chroma/

@@ -5,6 +5,7 @@ from typing import Any
 
 
 RETRY_QUEUE_MAX = 50
+RETRY_COOLDOWN = 5
 
 
 class Session:
@@ -17,11 +18,9 @@ class Session:
         self.history: list[dict[str, Any]] = []
         self.asked_seed_ids: list[str] = []
         self.retry_queue: list[dict[str, Any]] = []
-        self.products: dict[str, dict[str, int]] = {}
         self.session_runs: list[dict[str, Any]] = []
         self.current_run_start: str | None = None
-        self.current_level: int = 1
-        self.level_history: list[dict[str, Any]] = []
+        self.exam_runs: list[dict[str, Any]] = []
 
     @classmethod
     def load(cls, history_file: Path) -> "Session":
@@ -35,11 +34,9 @@ class Session:
             session.history = data.get("history", [])
             session.asked_seed_ids = data.get("asked_seed_ids", [])
             session.retry_queue = data.get("retry_queue", [])
-            session.products = data.get("products", {})
             session.session_runs = data.get("session_runs", [])
             session.current_run_start = data.get("current_run_start", None)
-            session.current_level = data.get("current_level", 1)
-            session.level_history = data.get("level_history", [])
+            session.exam_runs = data.get("exam_runs", [])
         return session
 
     def save(self) -> None:
@@ -52,11 +49,9 @@ class Session:
             "history": self.history,
             "asked_seed_ids": self.asked_seed_ids,
             "retry_queue": self.retry_queue,
-            "products": self.products,
             "session_runs": self.session_runs,
             "current_run_start": self.current_run_start,
-            "current_level": self.current_level,
-            "level_history": self.level_history,
+            "exam_runs": self.exam_runs,
         }
         self.history_file.write_text(json.dumps(data, indent=2))
 
@@ -64,18 +59,13 @@ class Session:
         self,
         question: str,
         choices: dict[str, str],
-        user_answer: str | list[str],
-        correct_answer: str | list[str],
+        user_answer: str,
+        correct_answer: str,
         domain: str,
         topic: str,
         explanation: str,
-        products: list[str] | None = None,
-        difficulty: int = 2,
     ) -> None:
-        if isinstance(correct_answer, list):
-            is_correct = set(user_answer) == set(correct_answer)
-        else:
-            is_correct = user_answer.upper() == correct_answer.upper()
+        is_correct = user_answer.upper() == correct_answer.upper()
         self.total_questions += 1
         if is_correct:
             self.total_correct += 1
@@ -92,23 +82,14 @@ class Session:
         if is_correct:
             self.topics[topic]["correct"] += 1
 
-        for product in (products or []):
-            if product not in self.products:
-                self.products[product] = {"asked": 0, "correct": 0}
-            self.products[product]["asked"] += 1
-            if is_correct:
-                self.products[product]["correct"] += 1
-
         self.history.append({
             "question": question,
             "choices": choices,
             "correct_answer": correct_answer,
-            "user_answer": [a.upper() for a in user_answer] if isinstance(user_answer, list) else user_answer.upper(),
+            "user_answer": user_answer.upper(),
             "domain": domain,
             "topic": topic,
             "explanation": explanation,
-            "products": products or [],
-            "difficulty": difficulty,
             "timestamp": datetime.now().isoformat(),
         })
 
@@ -118,6 +99,7 @@ class Session:
             if entry["question"] == question_text:
                 entry["retry_count"] += 1
                 entry["missed_at"] = datetime.now().isoformat()
+                entry["not_before"] = self.total_questions + RETRY_COOLDOWN
                 return
 
         entry = {
@@ -127,11 +109,9 @@ class Session:
             "domain": question_data.get("domain", ""),
             "topic": question_data.get("topic", ""),
             "explanation": question_data.get("explanation", ""),
-            "explanations": question_data.get("explanations"),
-            "case_study": question_data.get("case_study"),
-            "products": question_data.get("products", []),
             "missed_at": datetime.now().isoformat(),
             "retry_count": 0,
+            "not_before": self.total_questions + RETRY_COOLDOWN,
         }
         self.retry_queue.append(entry)
 
@@ -139,16 +119,26 @@ class Session:
             self.retry_queue = self.retry_queue[-RETRY_QUEUE_MAX:]
 
     def get_retry_question(self, weak_domains: set[str] | None = None) -> dict[str, Any] | None:
-        if not self.retry_queue:
+        eligible = [
+            i for i, e in enumerate(self.retry_queue)
+            if e.get("not_before", 0) <= self.total_questions
+        ]
+        if not eligible:
             return None
         if weak_domains:
-            for i, entry in enumerate(self.retry_queue):
-                if entry.get("domain") in weak_domains:
+            for i in eligible:
+                if self.retry_queue[i].get("domain") in weak_domains:
                     return self.retry_queue.pop(i)
-        return self.retry_queue.pop(0)
+        return self.retry_queue.pop(eligible[0])
 
     def retry_queue_size(self) -> int:
         return len(self.retry_queue)
+
+    def eligible_retry_count(self) -> int:
+        return sum(
+            1 for e in self.retry_queue
+            if e.get("not_before", 0) <= self.total_questions
+        )
 
     def start_run(self) -> None:
         self.current_run_start = datetime.now().isoformat()
@@ -174,70 +164,45 @@ class Session:
         })
         self.current_run_start = None
 
-    def weak_spots(self, threshold: float, recent_n: int = 0) -> list[str]:
+    def weak_domains(self, threshold: float, recent_n: int = 0) -> list[str]:
+        """Return domain names whose accuracy is below threshold, weakest first."""
         if recent_n > 0 and self.history:
-            recent = self.history[-recent_n:]
-            topic_stats: dict[str, dict[str, int]] = {}
-            for entry in recent:
-                topic = entry.get("topic", entry.get("domain", ""))
-                if topic not in topic_stats:
-                    topic_stats[topic] = {"asked": 0, "correct": 0}
-                topic_stats[topic]["asked"] += 1
+            stats: dict[str, dict[str, int]] = {}
+            for entry in self.history[-recent_n:]:
+                domain = entry.get("domain", "")
+                if not domain:
+                    continue
+                if domain not in stats:
+                    stats[domain] = {"asked": 0, "correct": 0}
+                stats[domain]["asked"] += 1
                 if entry["user_answer"] == entry["correct_answer"]:
-                    topic_stats[topic]["correct"] += 1
+                    stats[domain]["correct"] += 1
         else:
-            topic_stats = self.topics
+            stats = self.domains
 
         weak: list[tuple[str, float]] = []
-        for topic, stats in topic_stats.items():
-            if stats["asked"] > 0:
-                rate = stats["correct"] / stats["asked"]
+        for domain, s in stats.items():
+            if s["asked"] > 0:
+                rate = s["correct"] / s["asked"]
                 if rate < threshold:
-                    weak.append((topic, rate))
+                    weak.append((domain, rate))
         weak.sort(key=lambda x: x[1])
-        return [topic for topic, _ in weak]
+        return [domain for domain, _ in weak]
 
-    def weak_products(self, threshold: float) -> list[tuple[str, float, int]]:
-        weak: list[tuple[str, float, int]] = []
-        for product, stats in self.products.items():
-            if stats["asked"] >= 2:
-                rate = stats["correct"] / stats["asked"]
-                if rate < threshold:
-                    weak.append((product, rate, stats["asked"]))
-        weak.sort(key=lambda x: x[1])
-        return weak
-
-    def check_level_change(
-        self, promote_threshold: float, demote_threshold: float, window_size: int
-    ) -> int | None:
-        recent_at_level = [
-            h for h in self.history
-            if h.get("difficulty", 2) == self.current_level
-        ][-window_size:]
-
-        if len(recent_at_level) < window_size:
-            return None
-
-        correct = sum(
-            1 for h in recent_at_level
-            if h["user_answer"] == h["correct_answer"]
-        )
-        rate = correct / len(recent_at_level)
-
-        if rate >= promote_threshold and self.current_level < 3:
-            return self.current_level + 1
-        if rate <= demote_threshold and self.current_level > 1:
-            return self.current_level - 1
-        return None
-
-    def set_level(self, new_level: int) -> None:
-        self.level_history.append({
-            "from": self.current_level,
-            "to": new_level,
-            "timestamp": datetime.now().isoformat(),
-            "total_questions": self.total_questions,
+    def record_exam_run(
+        self,
+        score: int,
+        total: int,
+        elapsed_seconds: float,
+        per_domain: dict[str, dict[str, int]],
+    ) -> None:
+        self.exam_runs.append({
+            "ended": datetime.now().isoformat(),
+            "score": score,
+            "total": total,
+            "elapsed_seconds": int(elapsed_seconds),
+            "per_domain": per_domain,
         })
-        self.current_level = new_level
 
     def summary(self) -> dict[str, Any]:
         rate = (self.total_correct / self.total_questions * 100) if self.total_questions > 0 else 0.0
