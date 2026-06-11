@@ -39,6 +39,18 @@ DOMAIN_SHORT = {
 REPO_ROOT = Path(__file__).parent.parent
 
 
+def resolve_domain(value: str) -> str | None:
+    """Map a user-supplied domain name (short or full, case-insensitive) to a
+    canonical full domain name. Returns None if it matches nothing."""
+    value = value.strip().lower()
+    for full, short in DOMAIN_SHORT.items():
+        if value in (full.lower(), short.lower()):
+            return full
+    # Loose fallback: unique substring match against full names.
+    matches = [full for full in DOMAIN_WEIGHTS if value in full.lower()]
+    return matches[0] if len(matches) == 1 else None
+
+
 def load_config() -> dict:
     config_path = REPO_ROOT / "config.yaml"
     if not config_path.exists():
@@ -238,20 +250,33 @@ def show_stats(session: Session, threshold: float, recent_n: int = 0) -> None:
         console.print(exam_table)
 
 
-def cmd_study(config: dict) -> None:
+def cmd_study(config: dict, only_domain: str | None = None) -> None:
     threshold = config["tutor"]["weak_spot_threshold"]
     recent_n = config["tutor"].get("recent_n", 0)
 
     session = Session.load(Path(config["session"]["history_file"]))
 
-    has_seeds = get_unasked_seed(session.asked_seed_ids) is not None
-    has_retries = session.retry_queue_size() > 0
+    has_seeds = get_unasked_seed(session.asked_seed_ids, only_domain=only_domain) is not None
+    has_retries = session.eligible_retry_count(only_domain=only_domain) > 0 or (
+        only_domain is None and session.retry_queue_size() > 0
+    )
     if not has_seeds and not has_retries:
-        console.print("[red]No questions available. Add questions to claude_certified_architect_question_bank.json.[/red]")
+        if only_domain:
+            console.print(
+                f"[yellow]No more questions left in '{DOMAIN_SHORT.get(only_domain, only_domain)}'. "
+                "Try another domain or run plain [bold]study[/bold].[/yellow]"
+            )
+        else:
+            console.print("[red]No questions available. Add questions to claude_certified_architect_question_bank.json.[/red]")
         sys.exit(1)
 
     session.start_run()
     console.clear()
+    if only_domain:
+        console.print(Panel(
+            f"[bold]Focused study:[/bold] {only_domain}",
+            border_style="magenta",
+        ))
     console.print(build_header(session))
 
     while True:
@@ -261,24 +286,27 @@ def cmd_study(config: dict) -> None:
 
         weak_domains = set(session.weak_domains(threshold, recent_n))
 
-        if session.eligible_retry_count() > 0 and random.random() < 0.4:
-            question_data = session.get_retry_question(weak_domains)
+        if session.eligible_retry_count(only_domain=only_domain) > 0 and random.random() < 0.4:
+            question_data = session.get_retry_question(weak_domains, only_domain=only_domain)
             is_retry = True
 
         if not question_data:
-            seed = get_unasked_seed(session.asked_seed_ids, weak_domains)
+            seed = get_unasked_seed(session.asked_seed_ids, weak_domains, only_domain=only_domain)
             if seed:
                 question_data = seed
                 is_seed = True
 
         if not question_data:
-            seed = get_unasked_seed(session.asked_seed_ids)
+            seed = get_unasked_seed(session.asked_seed_ids, only_domain=only_domain)
             if seed:
                 question_data = seed
                 is_seed = True
 
         if not question_data:
-            console.print("[yellow]All questions answered! Add more questions to the bank.[/yellow]")
+            if only_domain:
+                console.print(f"[yellow]All '{DOMAIN_SHORT.get(only_domain, only_domain)}' questions answered![/yellow]")
+            else:
+                console.print("[yellow]All questions answered! Add more questions to the bank.[/yellow]")
             session.end_run()
             session.save()
             break
@@ -618,21 +646,45 @@ def main(args: list[str]) -> None:
     config = load_config()
 
     if not args:
-        console.print("[bold]Usage:[/bold] uv run -m tutor [study|exam|stats|refs|reset] [--reset]")
-        console.print("  study             Start a study session ([dim]--reset[/dim] clears history first)")
-        console.print("  exam              Take a timed 60-question mock exam")
-        console.print("  stats             Show performance summary")
-        console.print("  refs              Show reference links (exam guide, learning path)")
-        console.print("  reset             Erase all study history")
+        console.print("[bold]Usage:[/bold] uv run -m tutor [study|exam|stats|refs|reset] [--reset] [--domain NAME]")
+        console.print("  study                    Start a study session ([dim]--reset[/dim] clears history first)")
+        console.print("  study --domain MCP/Tools  Drill a single domain (short or full name)")
+        console.print("  exam                     Take a timed 60-question mock exam")
+        console.print("  stats                    Show performance summary")
+        console.print("  refs                     Show reference links (exam guide, learning path)")
+        console.print("  reset                    Erase all study history")
+        console.print(f"\n  [dim]Domains: {', '.join(DOMAIN_SHORT.values())}[/dim]")
         sys.exit(0)
 
     command = args[0]
-    flags = set(args[1:])
+    rest = args[1:]
+
+    # Parse --domain (accepts "--domain NAME" or "--domain=NAME").
+    only_domain: str | None = None
+    domain_raw: str | None = None
+    i = 0
+    while i < len(rest):
+        arg = rest[i]
+        if arg == "--domain":
+            domain_raw = rest[i + 1] if i + 1 < len(rest) else ""
+            i += 2
+            continue
+        if arg.startswith("--domain="):
+            domain_raw = arg.split("=", 1)[1]
+        i += 1
+    if domain_raw is not None:
+        only_domain = resolve_domain(domain_raw)
+        if only_domain is None:
+            console.print(f"[red]Unknown domain: '{domain_raw}'[/red]")
+            console.print(f"[dim]Choose one of: {', '.join(DOMAIN_SHORT.values())}[/dim]")
+            sys.exit(1)
+
+    flags = set(rest)
 
     if command == "study":
         if "--reset" in flags:
             _reset_session(config)
-        cmd_study(config)
+        cmd_study(config, only_domain=only_domain)
     elif command == "exam":
         cmd_exam(config)
     elif command == "stats":

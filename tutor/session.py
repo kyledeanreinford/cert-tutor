@@ -118,11 +118,15 @@ class Session:
         if len(self.retry_queue) > RETRY_QUEUE_MAX:
             self.retry_queue = self.retry_queue[-RETRY_QUEUE_MAX:]
 
-    def get_retry_question(self, weak_domains: set[str] | None = None) -> dict[str, Any] | None:
+    def get_retry_question(
+        self, weak_domains: set[str] | None = None, only_domain: str | None = None
+    ) -> dict[str, Any] | None:
         eligible = [
             i for i, e in enumerate(self.retry_queue)
             if e.get("not_before", 0) <= self.total_questions
         ]
+        if only_domain is not None:
+            eligible = [i for i in eligible if self.retry_queue[i].get("domain") == only_domain]
         if not eligible:
             return None
         if weak_domains:
@@ -134,10 +138,11 @@ class Session:
     def retry_queue_size(self) -> int:
         return len(self.retry_queue)
 
-    def eligible_retry_count(self) -> int:
+    def eligible_retry_count(self, only_domain: str | None = None) -> int:
         return sum(
             1 for e in self.retry_queue
             if e.get("not_before", 0) <= self.total_questions
+            and (only_domain is None or e.get("domain") == only_domain)
         )
 
     def start_run(self) -> None:

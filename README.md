@@ -3,15 +3,17 @@
 Offline CLI study tool for the **Claude Certified Architect — Foundations (CCA-F)** exam. Drills you on a 211-question
 bank, tracks weak domains, and runs a timed mock exam.
 
-Question bank lives in `claud_certified_architect_question_bank.json` and covers all five exam domains:
+Question bank lives in `claude_certified_architect_question_bank.json` and covers all five exam domains:
 
-| Domain                                 | Weight | Questions |
-|----------------------------------------|--------|-----------|
-| Agentic Architecture & Orchestration   | 27%    | 58        |
-| Tool Design & MCP Integration          | 18%    | 35        |
-| Claude Code Configuration & Workflows  | 20%    | 42        |
-| Prompt Engineering & Structured Output | 20%    | 42        |
-| Context Management & Reliability       | 15%    | 34        |
+| Domain                                 | `--domain` name | Weight | Questions |
+|----------------------------------------|-----------------|--------|-----------|
+| Agentic Architecture & Orchestration   | `Agentic`       | 27%    | 58        |
+| Tool Design & MCP Integration          | `MCP/Tools`     | 18%    | 35        |
+| Claude Code Configuration & Workflows  | `Claude Code`   | 20%    | 42        |
+| Prompt Engineering & Structured Output | `Prompting`     | 20%    | 42        |
+| Context Management & Reliability       | `Context`       | 15%    | 34        |
+
+`study --domain` accepts the short name, the full name, or any unambiguous substring (case-insensitive).
 
 The bank combines 27 questions from the official exam guide and community sources (`official-*`, `community-*`) with 184 generated questions (`gen-*`).
 
@@ -36,6 +38,9 @@ No API keys, no network calls — everything runs from the local question bank.
 # Adaptive study session — pulls from the bank and revisits missed questions
 uv run -m tutor study
 
+# Drill a single domain (see the table above for valid names)
+uv run -m tutor study --domain MCP/Tools
+
 # Timed 60-question mock exam (120 minutes, pass at 70%)
 uv run -m tutor exam
 
@@ -47,7 +52,8 @@ uv run -m tutor stats
 
 **study** — Picks unasked questions from the bank, weighted toward your weak domains. Missed questions go into a retry
 queue and resurface after a 5-question cooldown. The header shows a running pass-probability estimate based on
-per-domain accuracy. Type `Q` at any answer prompt to save and quit.
+per-domain accuracy. Type `Q` at any answer prompt to save and quit. Pass `--domain NAME` to restrict the session to
+a single domain (e.g. `study --domain MCP/Tools`); see the domain table above for valid names.
 
 **exam** — Simulates the real exam: 60 questions sampled by domain weight, 120-minute timer, no explanations until the
 end. `S` skips a question (returned to at the end), `Q` finishes early. Final screen shows pass/fail, per-domain
