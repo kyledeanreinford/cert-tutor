@@ -9,7 +9,7 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
-from tutor.seed_questions import get_unasked_seed, load_seed_questions
+from tutor.seed_questions import _shuffle_choices, get_unasked_seed, load_seed_questions
 from tutor.session import Session
 
 console = Console()
@@ -404,6 +404,12 @@ def cmd_exam(config: dict) -> None:
         used_ids.add(pick["id"])
 
     random.shuffle(exam_questions)
+
+    # Randomize answer positions so the correct choice isn't predictably the
+    # bank's original letter. _shuffle_choices mutates each (freshly loaded)
+    # question in place and remaps its explanation, so display, scoring, the
+    # end-of-exam review, and the retry queue all stay consistent.
+    exam_questions = [_shuffle_choices(q) for q in exam_questions]
 
     console.clear()
     console.print(Panel(
